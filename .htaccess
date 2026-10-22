@@ -1,0 +1,18 @@
+# Point d'entrée HTTP du projet sous XAMPP (/pgcc2/).
+Options -Indexes
+
+RewriteEngine On
+RewriteBase /pgcc2/
+
+# Le code PHP, les sauvegardes, les migrations et les outils ne sont pas
+# accessibles directement par le navigateur.
+RewriteRule ^(?:app|config|database|storage|tools|tests|backups)(?:/|$) - [F,L,NC]
+RewriteRule ^config\.php$ - [F,L,NC]
+
+# Les fichiers statiques du site restent accessibles dans public/assets/.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Les URLs applicatives passent par le routeur central.
+RewriteRule ^(.*)$ index.php?r=$1 [QSA,L]

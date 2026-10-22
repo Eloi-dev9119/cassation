@@ -1,0 +1,9 @@
+# Fichiers système et éditeurs
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+
+# Configuration locale sensible (les valeurs réelles viennent des
+# variables d'environnement PGCC_DB_*, voir config/app.php et README)
+.env
