@@ -201,26 +201,44 @@ function ordre_sql(string $ordre): string
 }
 
 /**
- * Point d'accès unique aux entrées de la requête HTTP : $_POST, $_GET et
- * $_SERVER['REQUEST_METHOD'] ne sont lus nulle part ailleurs. Contrôleurs
- * et modèles passent par ces fonctions ; les validations propres à chaque
- * champ (casts, ctype, checkdate, règles métier) restent aux sites d'appel.
- * Les tests peuvent continuer à alimenter $_POST et $_GET directement.
+ * Point d'accès unique aux entrées de la requête HTTP, via filter_input()
+ * avec le filtre FILTER_DEFAULT (valeur brute) : aucune superglobale n'est
+ * lue ailleurs. Les validations propres à chaque champ (casts, ctype,
+ * checkdate, jeton CSRF) restent aux sites d'appel.
+ *
+ * filter_input() lit l'entrée HTTP originale du SAPI, pas les
+ * superglobales : les scripts CLI qui alimentent $_POST directement ne
+ * sont donc pas vus — les tests de parcours passent par HTTP
+ * (tests/test_e2e_xampp.sh), comme une vraie requête.
  */
 function entree_post(string $cle, mixed $defaut = null): mixed
 {
-    return $_POST[$cle] ?? $defaut;
+    return entree_filtree(INPUT_POST, $cle, $defaut);
 }
 
 function entree_get(string $cle, mixed $defaut = null): mixed
 {
-    return $_GET[$cle] ?? $defaut;
+    return entree_filtree(INPUT_GET, $cle, $defaut);
+}
+
+/**
+ * Lit une entrée filtrée : filter_input() refuse les tableaux sans
+ * FILTER_REQUIRE_ARRAY et refuse les scalaires avec — d'où les deux
+ * passages (cas des cases à cocher multiples).
+ */
+function entree_filtree(int $source, string $cle, mixed $defaut): mixed
+{
+    $valeur = filter_input($source, $cle, FILTER_DEFAULT);
+    if ($valeur === false || $valeur === null) {
+        $valeur = filter_input($source, $cle, FILTER_DEFAULT, FILTER_REQUIRE_ARRAY);
+    }
+    return $valeur ?? $defaut;
 }
 
 /** Toutes les entrées POST, pour les parcours comples d'un formulaire. */
 function entrees_post(): array
 {
-    return $_POST;
+    return (array) filter_input_array(INPUT_POST, FILTER_DEFAULT);
 }
 
 /** La requête courante utilise-t-elle la méthode POST ? */
