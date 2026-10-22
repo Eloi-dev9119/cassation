@@ -57,3 +57,11 @@ Les scripts de vérification se trouvent dans `tests/`. Le parcours E2E dépend 
 ## Impression et exports
 
 Les listes des registres, mémoires, suivis et distributions proposent un export CSV tenant compte des filtres actifs. La répartition et la synthèse par Avocat Général sont aussi exportables. Les listes, rapports et fiches peuvent être imprimés depuis le navigateur.
+
+## Revue de sécurité — écarts volontaires
+
+Trois écarts aux recommandations des analyses automatiques (SonarQube) sont assumés ; les justifications ci-dessous font foi pour la revue des rapports :
+
+1. **Vérification MD5 dans `app/core/Password.php`** — couche de compatibilité avec PGCC v1, qui partage la table des comptes et écrit encore du MD5 sans jamais le migrer. Tout nouveau mot de passe est stocké en bcrypt (`password_hash()`), et chaque connexion validée sur une empreinte MD5 la réécrit immédiatement en bcrypt. La branche se retire quand `tools/maintenance/compter_mdp_legacy.php` annonce zéro empreinte « hex32 » et que v1 est hors service.
+2. **Identifiants SQL interpolés** (`nom_sql()`, `ordre_sql()` dans `app/core/helpers.php`, `identifiant()` dans l'outil CLI) — PDO ne paramètre pas les identifiants (tables, colonnes, ORDER BY). Chaque nom interpolé provient des définitions déclaratives du code et est validé sur `[A-Za-z0-9_]` avant interpolation ; toutes les valeurs de données passent par des requêtes préparées. Les requêtes contenant de l'interpolation utilisent systématiquement `prepare()`/`execute()`.
+3. **`storage/legacy/`** — archive figée de l'application v1, conservée pour référence et inaccessible par le web (règle `[F]` du `.htaccess`). Exclue des analyses SonarQube via `sonar-project.properties` (`sonar.exclusions=**/storage/**`) ; aucun correctif ne doit y être apporté.
