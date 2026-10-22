@@ -48,6 +48,8 @@ Les deux applications partagent la table des comptes. Les mots de passe récents
 
 L’outil `tools/maintenance/executer_relations.php` est conservé pour une intervention ciblée. Il supprime les traces d’historique sans dossier correspondant ; faire une sauvegarde avant de l’utiliser. La migration unifiée est préférable pour une mise à jour qui doit préserver ces traces.
 
+L’outil `tools/maintenance/compter_mdp_legacy.php` compte, en lecture seule, les empreintes de mots de passe encore stockées en MD5 dans les tables de comptes. La vérification MD5 de `app/core/Password.php` — nécessaire tant que PGCC v1 écrit encore du MD5 dans la table partagée — pourra être retirée quand cet outil annonce zéro et que v1 n’est plus utilisée.
+
 ## Vérifications
 
 Les scripts de vérification se trouvent dans `tests/`. Le parcours E2E dépend d’une instance XAMPP et d’une base de test jetable. Il refuse toute base qui ne commence pas par `pgcc_e2e_` et vérifie la base cible avant ses écritures. Consulter `tests/test_e2e_xampp.sh` avant de le lancer.

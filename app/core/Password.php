@@ -1,5 +1,17 @@
 <?php
-/** Vérification des mots de passe actuels et migration des empreintes MD5. */
+/**
+ * Vérification des mots de passe actuels et migration des empreintes MD5.
+ *
+ * La branche MD5 de verifier() est une couche de compatibilité, pas du
+ * chiffrement actif : chaque connexion valide déclenche la réécriture en
+ * bcrypt (verifierEtMigrer), et tout nouveau mot de passe — inscription,
+ * réinitialisation, changement — est déjà stocké avec password_hash().
+ * Elle ne peut pas être retirée aujourd'hui : PGCC v1, qui partage la
+ * table pgcc_client, écrit toujours du MD5 et ne migre jamais. Retirer
+ * la vérification MD5 exclurait donc les comptes qui ne se connectent
+ * que via v1. Condition de retrait : compter_mdp_legacy.php
+ * (tools/maintenance) annonce zéro empreinte MD5 ET v1 est hors service.
+ */
 
 declare(strict_types=1);
 
