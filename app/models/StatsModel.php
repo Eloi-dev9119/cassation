@@ -53,7 +53,7 @@ final class StatsModel
 
         $series = [];
         foreach (['pgcc_reg_pourvoi_pen' => 'Pénaux', 'pgcc_reg_pourvoi_civ' => 'Civils', 'pgcc_reg_arrivee_pen' => 'Arrivées'] as $table => $libelle) {
-            $req = $bdd->prepare("SELECT annee, COUNT(*) n FROM `$table` GROUP BY annee");
+            $req = $bdd->prepare('SELECT annee, COUNT(*) n FROM ' . nom_sql($table) . ' GROUP BY annee');
             $req->execute();
             $parAnnee = [];
             foreach ($req->fetchAll() as $l) {

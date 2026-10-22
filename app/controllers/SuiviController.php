@@ -96,7 +96,7 @@ final class SuiviController
         // État courant lu depuis la ligne concernée.
         $def = SuiviModel::definition($type);
         $req = Database::connexion()->prepare(
-            'SELECT archiver FROM `' . $def['table'] . '` WHERE `' . $def['cle'] . '` = :id'
+            'SELECT archiver FROM ' . nom_sql($def['table']) . ' WHERE ' . nom_sql($def['cle']) . ' = :id'
         );
         $req->execute(['id' => $id]);
         $courant = $req->fetchColumn();

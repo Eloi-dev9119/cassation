@@ -80,13 +80,13 @@ final class SuiviModel
             // être répété : PDO refuserait les paramètres en double).
             $parts = [];
             foreach ($def['recherche'] as $i => $colonne) {
-                $parts[] = "`$colonne` LIKE :q$i";
+                $parts[] = nom_sql($colonne) . ' LIKE :q' . $i;
                 $params["q$i"] = "%$recherche%";
             }
             $condition = ' WHERE (' . implode(' OR ', $parts) . ')';
         }
 
-        $req = $bdd->prepare('SELECT COUNT(*) FROM `' . $def['table'] . "`$condition");
+        $req = $bdd->prepare('SELECT COUNT(*) FROM ' . nom_sql($def['table']) . $condition);
         $req->execute($params);
         $total = (int) $req->fetchColumn();
 
@@ -95,7 +95,7 @@ final class SuiviModel
         $offset = ($page - 1) * LIGNES_PAR_PAGE;
 
         $req = $bdd->prepare(
-            'SELECT * FROM `' . $def['table'] . "`$condition ORDER BY " . $def['ordre']
+            'SELECT * FROM ' . nom_sql($def['table']) . $condition . ' ORDER BY ' . ordre_sql($def['ordre'])
             . ' LIMIT ' . LIGNES_PAR_PAGE . " OFFSET $offset"
         );
         $req->execute($params);
@@ -116,13 +116,13 @@ final class SuiviModel
         if ($recherche !== '') {
             $parts = [];
             foreach ($def['recherche'] as $i => $colonne) {
-                $parts[] = "`$colonne` LIKE :q$i";
+                $parts[] = nom_sql($colonne) . ' LIKE :q' . $i;
                 $params["q$i"] = "%$recherche%";
             }
             $condition = ' WHERE (' . implode(' OR ', $parts) . ')';
         }
         $req = Database::connexionPourExport()->prepare(
-            'SELECT * FROM `' . $def['table'] . "`$condition ORDER BY " . $def['ordre']
+            'SELECT * FROM ' . nom_sql($def['table']) . $condition . ' ORDER BY ' . ordre_sql($def['ordre'])
         );
         $req->execute($params);
         return $req;
@@ -143,8 +143,9 @@ final class SuiviModel
         $donnees['cree_par']       = utilisateur_login();
 
         $colonnes = array_keys($donnees);
-        $sql = 'INSERT INTO `' . $def['table'] . '` (`' . implode('`, `', $colonnes) . '`)
-                VALUES (:' . implode(', :', $colonnes) . ')';
+        $sql = 'INSERT INTO ' . nom_sql($def['table'])
+             . ' (' . implode(', ', array_map('nom_sql', $colonnes)) . ')'
+             . ' VALUES (:' . implode(', :', $colonnes) . ')';
         $req = Database::connexion()->prepare($sql);
         $req->execute($donnees);
         return (int) Database::connexion()->lastInsertId();
@@ -160,7 +161,8 @@ final class SuiviModel
             throw new InvalidArgumentException('Type de suivi inconnu.');
         }
         return Database::connexion()
-            ->prepare('UPDATE `' . $def['table'] . '` SET archiver = :a, modifie_par = :par WHERE `' . $def['cle'] . '` = :id')
+            ->prepare('UPDATE ' . nom_sql($def['table']) . ' SET archiver = :a, modifie_par = :par WHERE '
+                . nom_sql($def['cle']) . ' = :id')
             ->execute(['a' => $archiver ? '1' : '0', 'par' => utilisateur_login(), 'id' => $id]);
     }
 
@@ -175,7 +177,7 @@ final class SuiviModel
             throw new InvalidArgumentException('Type de suivi inconnu.');
         }
         $req = Database::connexion()->prepare(
-            'SELECT COALESCE(MAX(num_ordre), 0) + 1 FROM `' . $def['table'] . '` WHERE annee = :annee'
+            'SELECT COALESCE(MAX(num_ordre), 0) + 1 FROM ' . nom_sql($def['table']) . ' WHERE annee = :annee'
         );
         $req->execute(['annee' => $annee]);
         return (int) $req->fetchColumn();

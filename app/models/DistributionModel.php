@@ -103,7 +103,7 @@ final class DistributionModel
 
         $req = $bdd->prepare(
             "SELECT p.id_reg_pourvoi, p.num_ordre, p.annee, p.num_dossier_PGCS, p.cassationnaire
-             FROM `$table` p" . $condition
+             FROM " . nom_sql($table) . " p" . $condition
             . ' ORDER BY p.annee DESC, p.num_ordre DESC LIMIT 200'
         );
         $req->execute($params);
@@ -128,7 +128,7 @@ final class DistributionModel
 
         $bdd = Database::connexion();
         $req = $bdd->prepare(
-            "SELECT num_dossier_PGCS, cassationnaire FROM `$table` WHERE id_reg_pourvoi = :id"
+            "SELECT num_dossier_PGCS, cassationnaire FROM " . nom_sql($table) . " WHERE id_reg_pourvoi = :id"
         );
         $dejaDistribue = $bdd->prepare(
             'SELECT 1 FROM pgcc_distribution_pg

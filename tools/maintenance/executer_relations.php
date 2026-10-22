@@ -11,6 +11,15 @@ declare(strict_types=1);
 
 require_once dirname(__DIR__, 2) . '/config.php';
 
+/** Valide un identifiant SQL avant interpolation (PDO ne paramètre pas les identifiants). */
+function identifiant(string $nom): string
+{
+    if (preg_match('/^[A-Za-z0-9_]+$/', $nom) !== 1) {
+        throw new RuntimeException('Identifiant SQL invalide : ' . $nom);
+    }
+    return $nom;
+}
+
 $p = new PDO('mysql:host=' . DB_HOTE . ';dbname=' . DB_NOM . ';charset=utf8mb4', DB_USER, DB_MDP, [
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
@@ -25,8 +34,9 @@ $nettoyages = [
 ];
 $totalSupprimes = 0;
 foreach ($nettoyages as [$hist, $parent, $pk]) {
-    $n = $p->exec("DELETE h FROM `$hist` h LEFT JOIN `$parent` p ON p.`$pk` = h.id_dossier
-                   WHERE h.id_dossier IS NOT NULL AND p.`$pk` IS NULL");
+    $n = $p->exec("DELETE h FROM `" . identifiant($hist) . "` h LEFT JOIN `" . identifiant($parent) . "` p
+                   ON p.`" . identifiant($pk) . "` = h.id_dossier
+                   WHERE h.id_dossier IS NOT NULL AND p.`" . identifiant($pk) . "` IS NULL");
     $totalSupprimes += $n;
     printf("  %-36s → %d ligne(s) orpheline(s) supprimée(s)\n", $hist, $n);
 }
@@ -46,10 +56,10 @@ $relations = [
 $ok = 0;
 foreach ($relations as [$table, $ref, $refCle, $nom]) {
     try {
-        $p->exec("ALTER TABLE `$table`
-                  ADD INDEX idx_hist_{$nom}_dossier (id_dossier),
-                  ADD CONSTRAINT fk_hist_{$nom}_dossier
-                      FOREIGN KEY (id_dossier) REFERENCES `$ref` (`$refCle`)
+        $p->exec("ALTER TABLE `" . identifiant($table) . "`
+                  ADD INDEX idx_hist_" . identifiant($nom) . "_dossier (id_dossier),
+                  ADD CONSTRAINT fk_hist_" . identifiant($nom) . "_dossier
+                      FOREIGN KEY (id_dossier) REFERENCES `" . identifiant($ref) . "` (`" . identifiant($refCle) . "`)
                       ON DELETE CASCADE ON UPDATE CASCADE");
         echo "  OK  $table.id_dossier → $ref.$refCle\n";
         $ok++;
@@ -57,9 +67,9 @@ foreach ($relations as [$table, $ref, $refCle, $nom]) {
         // index déjà existant (ré-exécution) → retenter sans l'index
         if (str_contains($e->getMessage(), 'Duplicate key name')) {
             try {
-                $p->exec("ALTER TABLE `$table`
-                          ADD CONSTRAINT fk_hist_{$nom}_dossier
-                              FOREIGN KEY (id_dossier) REFERENCES `$ref` (`$refCle`)
+                $p->exec("ALTER TABLE `" . identifiant($table) . "`
+                          ADD CONSTRAINT fk_hist_" . identifiant($nom) . "_dossier
+                              FOREIGN KEY (id_dossier) REFERENCES `" . identifiant($ref) . "` (`" . identifiant($refCle) . "`)
                               ON DELETE CASCADE ON UPDATE CASCADE");
                 echo "  OK  $table.id_dossier → $ref.$refCle (index existant réutilisé)\n";
                 $ok++;
@@ -85,9 +95,9 @@ foreach ($fks as $fk) {
 }
 $orphelins = 0;
 foreach ($relations as [$table, $ref, $refCle]) {
-    $orphelins += (int) $p->query("SELECT COUNT(*) FROM `$table` h
-        LEFT JOIN `$ref` r ON r.`$refCle` = h.id_dossier
-        WHERE h.id_dossier IS NOT NULL AND r.`$refCle` IS NULL")->fetchColumn();
+    $orphelins += (int) $p->query("SELECT COUNT(*) FROM `" . identifiant($table) . "` h
+        LEFT JOIN `" . identifiant($ref) . "` r ON r.`" . identifiant($refCle) . "` = h.id_dossier
+        WHERE h.id_dossier IS NOT NULL AND r.`" . identifiant($refCle) . "` IS NULL")->fetchColumn();
 }
 echo "  Orphelins restants : $orphelins\n";
 exit(($ok === 8 && count($fks) === 8 && $orphelins === 0) ? 0 : 1);

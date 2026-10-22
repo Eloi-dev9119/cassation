@@ -48,7 +48,8 @@ final class MemoireModel
         ];
         if (!isset($sources[$origine]) || $numDossier === '') return null;
         [$table, $cle] = $sources[$origine];
-        $req = Database::connexion()->prepare("SELECT `$cle` FROM `$table` WHERE num_dossier_PGCS = :dossier LIMIT 2");
+        $req = Database::connexion()->prepare('SELECT ' . nom_sql($cle) . ' FROM ' . nom_sql($table)
+            . ' WHERE num_dossier_PGCS = :dossier LIMIT 2');
         $req->execute(['dossier' => $numDossier]);
         $ids = $req->fetchAll(PDO::FETCH_COLUMN);
         return count($ids) === 1 ? (int) $ids[0] : null;
@@ -63,10 +64,9 @@ final class MemoireModel
         ];
         if (!isset($sources[$origine]) || $numDossier === '') return [];
         $table = $sources[$origine];
-        $quote = chr(96);
         $req = Database::connexion()->prepare(
             "SELECT id_reg_pourvoi, num_ordre, annee, num_dossier_PGCS, cassationnaire
-             FROM " . $quote . $table . $quote . " WHERE num_dossier_PGCS = :dossier ORDER BY annee DESC, num_ordre DESC"
+             FROM " . nom_sql($table) . " WHERE num_dossier_PGCS = :dossier ORDER BY annee DESC, num_ordre DESC"
         );
         $req->execute(['dossier' => $numDossier]);
         return $req->fetchAll();
@@ -80,9 +80,8 @@ final class MemoireModel
         ];
         if (!isset($sources[$origine]) || $id < 1) return null;
         $table = $sources[$origine];
-        $quote = chr(96);
         $req = Database::connexion()->prepare(
-            "SELECT id_reg_pourvoi, num_dossier_PGCS FROM " . $quote . $table . $quote . " WHERE id_reg_pourvoi = :id"
+            "SELECT id_reg_pourvoi, num_dossier_PGCS FROM " . nom_sql($table) . " WHERE id_reg_pourvoi = :id"
         );
         $req->execute(['id' => $id]);
         $dossier = $req->fetch();
@@ -174,7 +173,8 @@ final class MemoireModel
             default => null,
         };
         if ($colonne === null || $idDossier < 1) return [];
-        $req = Database::connexion()->prepare("SELECT * FROM pgcc_reg_memoires WHERE `$colonne` = :id ORDER BY date_depot DESC");
+        $req = Database::connexion()->prepare("SELECT * FROM pgcc_reg_memoires WHERE "
+            . nom_sql($colonne) . " = :id ORDER BY date_depot DESC");
         $req->execute(['id' => $idDossier]);
         return $req->fetchAll();
     }

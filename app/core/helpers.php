@@ -173,3 +173,29 @@ function recuperer_flash(): ?array
     unset($_SESSION['flash']);
     return $flash;
 }
+
+/**
+ * Qualifie un identifiant SQL (table, colonne) après validation stricte.
+ * PDO ne sait pas paramétrer un identifiant : les noms interpolés dans une
+ * requête proviennent des définitions déclaratives et doivent se limiter à
+ * l'alphanumérique et au souligné pour exclure toute injection.
+ */
+function nom_sql(string $nom): string
+{
+    if (preg_match('/^[A-Za-z0-9_]+$/', $nom) !== 1) {
+        throw new InvalidArgumentException('Identifiant SQL invalide : ' . $nom);
+    }
+    return '`' . $nom . '`';
+}
+
+/**
+ * Valide une clause ORDER BY issue des définitions déclaratives :
+ * liste de « colonne [ASC|DESC] » séparées par des virgules, rien d'autre.
+ */
+function ordre_sql(string $ordre): string
+{
+    if (preg_match('/^[A-Za-z0-9_]+( (ASC|DESC))?(, [A-Za-z0-9_]+( (ASC|DESC))?)*$/', $ordre) !== 1) {
+        throw new InvalidArgumentException('Clause ORDER BY invalide : ' . $ordre);
+    }
+    return $ordre;
+}

@@ -25,13 +25,12 @@ final class RegistreModel
     public function liste(int $page = 1, string $recherche = '', ?int $annee = null): array
     {
         $bdd    = Database::connexion();
-        $table  = $this->definition['table'];
-        $cle    = $this->definition['cle'];
+        $table  = nom_sql($this->definition['table']);
         [$where, $params] = $this->construireFiltres($recherche, $annee);
         $condition = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 
         // Nombre total de dossiers correspondant aux filtres.
-        $req = $bdd->prepare("SELECT COUNT(*) FROM `$table`$condition");
+        $req = $bdd->prepare("SELECT COUNT(*) FROM $table$condition");
         $req->execute($params);
         $total = (int) $req->fetchColumn();
 
@@ -39,7 +38,7 @@ final class RegistreModel
         $page   = min(max(1, $page), $pages);
         $offset = ($page - 1) * LIGNES_PAR_PAGE;
 
-        $sql = "SELECT * FROM `$table`$condition ORDER BY " . $this->definition['ordre']
+        $sql = "SELECT * FROM $table$condition ORDER BY " . ordre_sql($this->definition['ordre'])
              . " LIMIT " . LIGNES_PAR_PAGE . " OFFSET $offset";
         $req = $bdd->prepare($sql);
         $req->execute($params);
@@ -57,8 +56,8 @@ final class RegistreModel
     {
         [$where, $params] = $this->construireFiltres($recherche, $annee);
         $condition = $where ? ' WHERE ' . implode(' AND ', $where) : '';
-        $sql = 'SELECT * FROM `' . $this->definition['table'] . '`' . $condition
-             . ' ORDER BY ' . $this->definition['ordre'];
+        $sql = 'SELECT * FROM ' . nom_sql($this->definition['table']) . $condition
+             . ' ORDER BY ' . ordre_sql($this->definition['ordre']);
         $req = Database::connexionPourExport()->prepare($sql);
         $req->execute($params);
         return $req;
@@ -70,7 +69,8 @@ final class RegistreModel
     public function trouver(int $id): ?array
     {
         $req = Database::connexion()->prepare(
-            'SELECT * FROM `' . $this->definition['table'] . '` WHERE `' . $this->definition['cle'] . '` = :id'
+            'SELECT * FROM ' . nom_sql($this->definition['table'])
+            . ' WHERE ' . nom_sql($this->definition['cle']) . ' = :id'
         );
         $req->execute(['id' => $id]);
         $ligne = $req->fetch();
@@ -84,7 +84,7 @@ final class RegistreModel
     public function annees(): array
     {
         $req = Database::connexion()->query(
-            'SELECT DISTINCT annee FROM `' . $this->definition['table'] . '` ORDER BY annee DESC'
+            'SELECT DISTINCT annee FROM ' . nom_sql($this->definition['table']) . ' ORDER BY annee DESC'
         );
         return array_map('intval', $req->fetchAll(PDO::FETCH_COLUMN));
     }
@@ -102,8 +102,9 @@ final class RegistreModel
     {
         $donnees['cree_par'] = utilisateur_login();
         $colonnes = array_keys($donnees);
-        $sql = 'INSERT INTO `' . $this->definition['table'] . '` (`' . implode('`, `', $colonnes) . '`)
-                VALUES (:' . implode(', :', $colonnes) . ')';
+        $sql = 'INSERT INTO ' . nom_sql($this->definition['table'])
+             . ' (' . implode(', ', array_map('nom_sql', $colonnes)) . ')'
+             . ' VALUES (:' . implode(', :', $colonnes) . ')';
         $req = Database::connexion()->prepare($sql);
         $req->execute($donnees);
         return (int) Database::connexion()->lastInsertId();
@@ -117,9 +118,12 @@ final class RegistreModel
     public function modifier(int $id, array $donnees): bool
     {
         $donnees['modifie_par'] = utilisateur_login();
-        $affectations = implode(', ', array_map(fn ($c) => "`$c` = :$c", array_keys($donnees)));
-        $sql = 'UPDATE `' . $this->definition['table'] . "` SET $affectations WHERE `"
-             . $this->definition['cle'] . '` = :id';
+        $affectations = implode(', ', array_map(
+            fn (string $c): string => nom_sql($c) . ' = :' . $c,
+            array_keys($donnees)
+        ));
+        $sql = 'UPDATE ' . nom_sql($this->definition['table']) . ' SET ' . $affectations
+             . ' WHERE ' . nom_sql($this->definition['cle']) . ' = :id';
         $req = Database::connexion()->prepare($sql);
         return $req->execute($donnees + ['id' => $id]);
     }
@@ -150,7 +154,7 @@ final class RegistreModel
             $conditions = [];
             foreach ($this->definition['recherche'] as $i => $colonne) {
                 $cle = 'q' . $i;
-                $conditions[] = "`$colonne` LIKE :$cle";
+                $conditions[] = nom_sql($colonne) . ' LIKE :' . $cle;
                 $params[$cle] = '%' . $recherche . '%';
             }
             $where[] = '(' . implode(' OR ', $conditions) . ')';
