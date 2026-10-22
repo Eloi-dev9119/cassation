@@ -83,9 +83,10 @@ final class RegistreModel
      */
     public function annees(): array
     {
-        $req = Database::connexion()->query(
+        $req = Database::connexion()->prepare(
             'SELECT DISTINCT annee FROM ' . nom_sql($this->definition['table']) . ' ORDER BY annee DESC'
         );
+        $req->execute();
         return array_map('intval', $req->fetchAll(PDO::FETCH_COLUMN));
     }
 

@@ -34,9 +34,11 @@ $nettoyages = [
 ];
 $totalSupprimes = 0;
 foreach ($nettoyages as [$hist, $parent, $pk]) {
-    $n = $p->exec("DELETE h FROM `" . identifiant($hist) . "` h LEFT JOIN `" . identifiant($parent) . "` p
+    $req = $p->prepare("DELETE h FROM `" . identifiant($hist) . "` h LEFT JOIN `" . identifiant($parent) . "` p
                    ON p.`" . identifiant($pk) . "` = h.id_dossier
                    WHERE h.id_dossier IS NOT NULL AND p.`" . identifiant($pk) . "` IS NULL");
+    $req->execute();
+    $n = $req->rowCount();
     $totalSupprimes += $n;
     printf("  %-36s → %d ligne(s) orpheline(s) supprimée(s)\n", $hist, $n);
 }
@@ -56,21 +58,23 @@ $relations = [
 $ok = 0;
 foreach ($relations as [$table, $ref, $refCle, $nom]) {
     try {
-        $p->exec("ALTER TABLE `" . identifiant($table) . "`
+        $req = $p->prepare("ALTER TABLE `" . identifiant($table) . "`
                   ADD INDEX idx_hist_" . identifiant($nom) . "_dossier (id_dossier),
                   ADD CONSTRAINT fk_hist_" . identifiant($nom) . "_dossier
                       FOREIGN KEY (id_dossier) REFERENCES `" . identifiant($ref) . "` (`" . identifiant($refCle) . "`)
                       ON DELETE CASCADE ON UPDATE CASCADE");
+        $req->execute();
         echo "  OK  $table.id_dossier → $ref.$refCle\n";
         $ok++;
     } catch (PDOException $e) {
         // index déjà existant (ré-exécution) → retenter sans l'index
         if (str_contains($e->getMessage(), 'Duplicate key name')) {
             try {
-                $p->exec("ALTER TABLE `" . identifiant($table) . "`
+                $req = $p->prepare("ALTER TABLE `" . identifiant($table) . "`
                           ADD CONSTRAINT fk_hist_" . identifiant($nom) . "_dossier
                               FOREIGN KEY (id_dossier) REFERENCES `" . identifiant($ref) . "` (`" . identifiant($refCle) . "`)
                               ON DELETE CASCADE ON UPDATE CASCADE");
+                $req->execute();
                 echo "  OK  $table.id_dossier → $ref.$refCle (index existant réutilisé)\n";
                 $ok++;
                 continue;
@@ -95,9 +99,11 @@ foreach ($fks as $fk) {
 }
 $orphelins = 0;
 foreach ($relations as [$table, $ref, $refCle]) {
-    $orphelins += (int) $p->query("SELECT COUNT(*) FROM `" . identifiant($table) . "` h
+    $req = $p->prepare("SELECT COUNT(*) FROM `" . identifiant($table) . "` h
         LEFT JOIN `" . identifiant($ref) . "` r ON r.`" . identifiant($refCle) . "` = h.id_dossier
-        WHERE h.id_dossier IS NOT NULL AND r.`" . identifiant($refCle) . "` IS NULL")->fetchColumn();
+        WHERE h.id_dossier IS NOT NULL AND r.`" . identifiant($refCle) . "` IS NULL");
+    $req->execute();
+    $orphelins += (int) $req->fetchColumn();
 }
 echo "  Orphelins restants : $orphelins\n";
 exit(($ok === 8 && count($fks) === 8 && $orphelins === 0) ? 0 : 1);
