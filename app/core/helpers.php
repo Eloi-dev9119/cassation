@@ -199,3 +199,32 @@ function ordre_sql(string $ordre): string
     }
     return $ordre;
 }
+
+/**
+ * Point d'accès unique aux entrées de la requête HTTP : $_POST, $_GET et
+ * $_SERVER['REQUEST_METHOD'] ne sont lus nulle part ailleurs. Contrôleurs
+ * et modèles passent par ces fonctions ; les validations propres à chaque
+ * champ (casts, ctype, checkdate, règles métier) restent aux sites d'appel.
+ * Les tests peuvent continuer à alimenter $_POST et $_GET directement.
+ */
+function entree_post(string $cle, mixed $defaut = null): mixed
+{
+    return $_POST[$cle] ?? $defaut;
+}
+
+function entree_get(string $cle, mixed $defaut = null): mixed
+{
+    return $_GET[$cle] ?? $defaut;
+}
+
+/** Toutes les entrées POST, pour les parcours comples d'un formulaire. */
+function entrees_post(): array
+{
+    return $_POST;
+}
+
+/** La requête courante utilise-t-elle la méthode POST ? */
+function requete_post(): bool
+{
+    return ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST';
+}

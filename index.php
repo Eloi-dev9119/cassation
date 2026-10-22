@@ -34,7 +34,7 @@ spl_autoload_register(static function (string $classe): void {
 
 // Sonde réservée à une instance de test explicitement configurée. Le script
 // E2E compare cette réponse à sa base jetable avant toute écriture.
-if (isset($_GET['e2e_probe'])) {
+if (entree_get('e2e_probe') !== null) {
     if (getenv('PGCC_E2E_MODE') !== 'true' || preg_match('/^pgcc_e2e_[a-zA-Z0-9_]+$/', DB_NOM) !== 1) {
         http_response_code(404);
         exit;
@@ -47,7 +47,7 @@ if (isset($_GET['e2e_probe'])) {
 Auth::demarrer();
 
 /** @var string[] $route Segments de la route demandée. */
-$route = array_values(array_filter(explode('/', (string) ($_GET['r'] ?? '')), static fn (string $segment): bool => $segment !== ''));
+$route = array_values(array_filter(explode('/', (string) entree_get('r', '')), static fn (string $segment): bool => $segment !== ''));
 $page = $route[0] ?? '';
 
 try {

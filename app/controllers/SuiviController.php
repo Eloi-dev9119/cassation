@@ -28,10 +28,10 @@ final class SuiviController
 
     private function liste(string $type): void
     {
-        $page      = max(1, (int) ($_GET['p'] ?? 1));
-        $recherche = trim((string) ($_GET['q'] ?? ''));
+        $page      = max(1, (int) entree_get('p', 1));
+        $recherche = trim((string) entree_get('q', ''));
         $modeleSuivi = new SuiviModel();
-        if (($_GET['export'] ?? '') === 'csv') {
+        if (entree_get('export', '') === 'csv') {
             $definition = SuiviModel::definition($type);
             $colonnes = array_map(static fn (array $c): array => [
                 'champ' => $c['nom'], 'libelle' => $c['libelle'], 'type' => $c['type'] === 'textelong' ? '' : $c['type'],
@@ -56,8 +56,8 @@ final class SuiviController
         $modele = SuiviModel::definition($type);
 
         $erreurs = [];
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!Auth::verifierJeton($_POST['jeton'] ?? null)) {
+        if (requete_post()) {
+            if (!Auth::verifierJeton(entree_post('jeton'))) {
                 flash('erreur', 'Votre session a expiré. Rechargez la page puis réessayez.');
                 rediriger('/suivis/' . $type);
             }
@@ -82,15 +82,15 @@ final class SuiviController
      */
     private function archiver(string $type): void
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        if (!requete_post()) {
             flash('erreur', 'Cette action doit être envoyée depuis le formulaire prévu.');
             rediriger('/suivis/' . $type);
         }
-        if (!Auth::verifierJeton($_POST['jeton'] ?? null)) {
+        if (!Auth::verifierJeton(entree_post('jeton'))) {
             flash('erreur', 'Votre session a expiré. Rechargez la page puis réessayez.');
             rediriger('/suivis/' . $type);
         }
-        $id = (int) ($_POST['id'] ?? 0);
+        $id = (int) entree_post('id', 0);
         $modele = new SuiviModel();
 
         // État courant lu depuis la ligne concernée.

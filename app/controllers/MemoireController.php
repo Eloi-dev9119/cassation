@@ -19,9 +19,9 @@ final class MemoireController
         match ($action) {
             'liste'      => $this->liste(),
             'creer'      => $this->formulaire(null),
-            'modifier'   => $this->formulaire((int) ($_GET['id'] ?? 0)),
-            'supprimer'  => $this->supprimer((int) ($_GET['id'] ?? 0)),
-            'etat'       => $this->changerEtat((int) ($_GET['id'] ?? 0)),
+            'modifier'   => $this->formulaire((int) entree_get('id', 0)),
+            'supprimer'  => $this->supprimer((int) entree_get('id', 0)),
+            'etat'       => $this->changerEtat((int) entree_get('id', 0)),
             default      => page_404('Action inconnue'),
         };
     }
@@ -30,13 +30,15 @@ final class MemoireController
 
     private function liste(): void
     {
-        $page      = max(1, (int) ($_GET['p'] ?? 1));
-        $recherche = trim((string) ($_GET['q'] ?? ''));
-        $type      = isset($_GET['type']) && $_GET['type'] !== '' ? (string) $_GET['type'] : null;
-        $etat      = isset($_GET['etat']) && $_GET['etat'] !== '' ? (string) $_GET['etat'] : null;
+        $page      = max(1, (int) entree_get('p', 1));
+        $recherche = trim((string) entree_get('q', ''));
+        $typeBrut  = (string) entree_get('type', '');
+        $type      = $typeBrut !== '' ? $typeBrut : null;
+        $etatBrut  = (string) entree_get('etat', '');
+        $etat      = $etatBrut !== '' ? $etatBrut : null;
 
         $modele = new MemoireModel();
-        if (($_GET['export'] ?? '') === 'csv') {
+        if (entree_get('export', '') === 'csv') {
             CsvExporter::telecharger('memoires-' . date('Ymd') . '.csv', [
                 ['champ' => 'num_ordre', 'libelle' => 'N° ordre'],
                 ['champ' => 'annee', 'libelle' => 'Année'],
@@ -77,31 +79,31 @@ final class MemoireController
 
         // N° de dossier pré-rempli quand on arrive depuis la fiche d'un
         // dossier de registre (?dossier=...).
-        $prefillDossier = (string) ($memoire['num_dossier_PGCS'] ?? trim((string) ($_GET['dossier'] ?? '')));
-        $prefillOrigine = (string) ($memoire['origine'] ?? ($_GET['origine'] ?? 'penal'));
+        $prefillDossier = (string) ($memoire['num_dossier_PGCS'] ?? trim((string) entree_get('dossier', '')));
+        $prefillOrigine = (string) ($memoire['origine'] ?? entree_get('origine', 'penal'));
         if (!isset(MemoireModel::ORIGINES[$prefillOrigine])) {
             $prefillOrigine = 'penal';
         }
         $colonneSource = $prefillOrigine === 'civil' ? 'id_reg_pourvoi_civ' : 'id_reg_pourvoi_pen';
-        $idDossierSourceSelectionne = (int) ($memoire[$colonneSource] ?? ($_GET['source_id'] ?? 0));
+        $idDossierSourceSelectionne = (int) ($memoire[$colonneSource] ?? entree_get('source_id', 0));
         $dossiersCorrespondants = $prefillDossier !== ''
             ? $modele->dossiersCorrespondants($prefillOrigine, $prefillDossier)
             : [];
         $valeursFormulaire = [];
         $erreurs = [];
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!Auth::verifierJeton($_POST['jeton'] ?? null)) {
+        if (requete_post()) {
+            if (!Auth::verifierJeton(entree_post('jeton'))) {
                 flash('erreur', 'Votre session a expiré. Rechargez la page puis réessayez.');
                 rediriger('/memoires');
             }
-            foreach ($_POST as $champ => $valeur) {
+            foreach (entrees_post() as $champ => $valeur) {
                 if ($champ !== 'jeton' && is_scalar($valeur)) {
                     $valeursFormulaire[$champ] = (string) $valeur;
                 }
             }
-            $prefillDossier = trim((string) ($_POST['num_dossier_PGCS'] ?? ''));
-            $prefillOrigine = (string) ($_POST['origine'] ?? 'penal');
-            $idDossierSourceSelectionne = (int) ($_POST['id_dossier_source'] ?? 0);
+            $prefillDossier = trim((string) entree_post('num_dossier_PGCS', ''));
+            $prefillOrigine = (string) entree_post('origine', 'penal');
+            $idDossierSourceSelectionne = (int) entree_post('id_dossier_source', 0);
             $dossiersCorrespondants = isset(MemoireModel::ORIGINES[$prefillOrigine]) && $prefillDossier !== ''
                 ? $modele->dossiersCorrespondants($prefillOrigine, $prefillDossier)
                 : [];
@@ -136,11 +138,11 @@ final class MemoireController
 
     private function supprimer(int $id): void
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        if (!requete_post()) {
             flash('erreur', 'Cette action doit être envoyée depuis le formulaire prévu.');
             rediriger('/memoires');
         }
-        if (!Auth::verifierJeton($_POST['jeton'] ?? null)) {
+        if (!Auth::verifierJeton(entree_post('jeton'))) {
             flash('erreur', 'Votre session a expiré. Rechargez la page puis réessayez.');
             rediriger('/memoires');
         }
@@ -154,15 +156,15 @@ final class MemoireController
      */
     private function changerEtat(int $id): void
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        if (!requete_post()) {
             flash('erreur', 'Cette action doit être envoyée depuis le formulaire prévu.');
             rediriger('/memoires');
         }
-        if (!Auth::verifierJeton($_POST['jeton'] ?? null)) {
+        if (!Auth::verifierJeton(entree_post('jeton'))) {
             flash('erreur', 'Votre session a expiré. Rechargez la page puis réessayez.');
             rediriger('/memoires');
         }
-        $etat = (string) ($_POST['etat'] ?? '');
+        $etat = (string) entree_post('etat', '');
         if (isset(MemoireModel::ETATS[$etat])) {
             (new MemoireModel())->modifier($id, ['etat' => $etat]);
             flash('succes', 'État du mémoire mis à jour : ' . MemoireModel::ETATS[$etat] . '.');
@@ -181,17 +183,17 @@ final class MemoireController
             'num_ordre'    => 0,
             'annee'        => 0,
             'date_insertion' => null,
-            'type_memoire' => ($_POST['type_memoire'] ?? '') === 'defense' ? 'defense' : 'ampliatif',
-            'origine'      => (string) ($_POST['origine'] ?? 'penal'),
-            'num_dossier_PGCS' => trim((string) ($_POST['num_dossier_PGCS'] ?? '')),
-            'parties'      => trim((string) ($_POST['parties'] ?? '')),
-            'avocat'       => trim((string) ($_POST['avocat'] ?? '')),
+            'type_memoire' => entree_post('type_memoire', '') === 'defense' ? 'defense' : 'ampliatif',
+            'origine'      => (string) entree_post('origine', 'penal'),
+            'num_dossier_PGCS' => trim((string) entree_post('num_dossier_PGCS', '')),
+            'parties'      => trim((string) entree_post('parties', '')),
+            'avocat'       => trim((string) entree_post('avocat', '')),
             'date_notification' => $this->lireDate('date_notification', $erreurs),
             'date_depot'        => $this->lireDate('date_depot', $erreurs),
             'date_transmission_secretaire' => $this->lireDate('date_transmission_secretaire', $erreurs),
-            'rapporteur'   => trim((string) ($_POST['rapporteur'] ?? '')),
-            'observation'  => trim((string) ($_POST['observation'] ?? '')),
-            'etat'         => (string) ($_POST['etat'] ?? 'depose'),
+            'rapporteur'   => trim((string) entree_post('rapporteur', '')),
+            'observation'  => trim((string) entree_post('observation', '')),
+            'etat'         => (string) entree_post('etat', 'depose'),
         ];
 
         if (!isset(MemoireModel::ETATS[$d['etat']])) {
@@ -207,7 +209,7 @@ final class MemoireController
         if ($d['num_dossier_PGCS'] === '') {
             $erreurs[] = 'Le numéro de dossier PGCS est obligatoire.';
         } else {
-            $selectionBrute = trim((string) ($_POST['id_dossier_source'] ?? ''));
+            $selectionBrute = trim((string) entree_post('id_dossier_source', ''));
             $memeSource = ($memoireExistant['origine'] ?? null) === $d['origine']
                 && ($memoireExistant['num_dossier_PGCS'] ?? null) === $d['num_dossier_PGCS'];
             if ($selectionBrute !== '') {
@@ -239,14 +241,14 @@ final class MemoireController
         $d['id_reg_pourvoi_pen'] = $d['origine'] === 'penal' ? $idDossierSource : null;
         $d['id_reg_pourvoi_civ'] = $d['origine'] === 'civil' ? $idDossierSource : null;
 
-        $annee = (int) ($_POST['annee'] ?? 0);
+        $annee = (int) entree_post('annee', 0);
         if ($annee < 1990 || $annee > 2100) {
             $erreurs[] = 'L\'année doit être comprise entre 1990 et 2100.';
         }
         $d['annee'] = $annee;
 
         // Numéro d'ordre : auto-calculé en création si laissé vide.
-        $numero = trim((string) ($_POST['num_ordre'] ?? ''));
+        $numero = trim((string) entree_post('num_ordre', ''));
         if ($numero === '' || !ctype_digit($numero)) {
             if ($modification) {
                 $erreurs[] = 'Le numéro d\'ordre doit être numérique.';
@@ -269,7 +271,7 @@ final class MemoireController
      */
     private function lireDate(string $champ, array &$erreurs): ?string
     {
-        $valeurBrute = $_POST[$champ] ?? '';
+        $valeurBrute = entree_post($champ, '');
         $libelles = [
             'date_notification' => 'date de notification',
             'date_depot' => 'date de dépôt',

@@ -23,15 +23,15 @@ final class MembreController
 
         // Les actions d'administration ne sont permises qu'aux postes
         // habilités ; la consultation des listes reste ouverte à tous.
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        if (requete_post()) {
             if (!est_administration($utilisateur)) {
                 flash('erreur', 'Seule l\'administration du Parquet peut effectuer cette action.');
                 rediriger('/membres/' . $filtre);
             }
             $this->traiterAction(
-                (int) ($_POST['id'] ?? 0),
+                (int) entree_post('id', 0),
                 $filtre,
-                (string) ($_POST['source'] ?? 'client')
+                (string) entree_post('source', 'client')
             );
         }
 
@@ -49,7 +49,7 @@ final class MembreController
      */
     private function traiterAction(int $id, string $filtre, string $source = 'client'): void
     {
-        if (!Auth::verifierJeton($_POST['jeton'] ?? null)) {
+        if (!Auth::verifierJeton(entree_post('jeton'))) {
             flash('erreur', 'Votre session a expiré. Rechargez la page puis réessayez.');
             rediriger('/membres/' . $filtre);
         }
@@ -59,7 +59,7 @@ final class MembreController
         }
 
         $modele = new ClientModel();
-        $action = (string) ($_POST['action'] ?? '');
+        $action = (string) entree_post('action', '');
 
         switch ($action) {
             case 'valider':

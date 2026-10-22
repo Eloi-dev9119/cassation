@@ -14,18 +14,18 @@ final class DistributionController
     {
         Auth::exiger();
 
-        $type   = in_array($_GET['type'] ?? '', ['civ'], true) ? 'civ' : 'pen';
-        $action = $_GET['a'] ?? '';
+        $type   = in_array(entree_get('type', ''), ['civ'], true) ? 'civ' : 'pen';
+        $action = (string) entree_get('a', '');
 
         if ($action === 'nouvelle') {
             $this->nouvelleListe($type);
             return;
         }
 
-        $page      = max(1, (int) ($_GET['p'] ?? 1));
-        $recherche = trim((string) ($_GET['q'] ?? ''));
+        $page      = max(1, (int) entree_get('p', 1));
+        $recherche = trim((string) entree_get('q', ''));
         $modeleDistribution = new DistributionModel();
-        if (($_GET['export'] ?? '') === 'csv') {
+        if (entree_get('export', '') === 'csv') {
             CsvExporter::telecharger('distributions-' . $type . '-' . date('Ymd') . '.csv', [
                 ['champ' => 'annee', 'libelle' => 'Année'],
                 ['champ' => 'nom_liste', 'libelle' => 'Liste'],
@@ -54,18 +54,18 @@ final class DistributionController
         $modele = new DistributionModel();
 
         $erreurs = [];
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!Auth::verifierJeton($_POST['jeton'] ?? null)) {
+        if (requete_post()) {
+            if (!Auth::verifierJeton(entree_post('jeton'))) {
                 flash('erreur', 'Votre session a expiré. Rechargez la page puis réessayez.');
                 rediriger('/distributions?type=' . $type);
             }
 
             $typePost = $type;
-            $nomListe = trim((string) ($_POST['nom_liste'] ?? ''));
-            $annee    = (int) ($_POST['annee'] ?? 0);
-            $sigle    = trim((string) ($_POST['sigle'] ?? ''));
-            $ids      = array_filter((array) ($_POST['dossiers'] ?? []), fn ($v) => ctype_digit((string) $v));
-            $remiseBrute = $_POST['date_remise_secr'] ?? '';
+            $nomListe = trim((string) entree_post('nom_liste', ''));
+            $annee    = (int) entree_post('annee', 0);
+            $sigle    = trim((string) entree_post('sigle', ''));
+            $ids      = array_filter((array) entree_post('dossiers', []), fn ($v) => ctype_digit((string) $v));
+            $remiseBrute = entree_post('date_remise_secr', '');
             $remise = null;
             if (!is_scalar($remiseBrute)) {
                 $erreurs[] = 'La date de remise au secrétariat est invalide.';
@@ -105,8 +105,8 @@ final class DistributionController
         View::afficher('distributions/nouvelle.php', [
             'titrePage' => 'Nouvelle liste de distribution — ' . APP_NOM,
             'type'      => $type,
-            'dossiers'  => $modele->dossiersNonDistribues($type, trim((string) ($_GET['q'] ?? ''))),
-            'recherche' => trim((string) ($_GET['q'] ?? '')),
+            'dossiers'  => $modele->dossiersNonDistribues($type, trim((string) entree_get('q', ''))),
+            'recherche' => trim((string) entree_get('q', '')),
             'erreurs'   => $erreurs,
         ]);
     }

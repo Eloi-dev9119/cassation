@@ -16,14 +16,14 @@ final class SuiviDossierController
         $ags = $modele->avocatsGeneraux();
 
         // AG sélectionné : paramètre ou premier de la liste.
-        $sigleChoisi = trim((string) ($_GET['ag'] ?? ''));
+        $sigleChoisi = trim((string) entree_get('ag', ''));
         if ($sigleChoisi === '' && $ags !== []) {
             $sigleChoisi = (string) $ags[0]['sigle_AG'];
         }
 
         $synthese = $sigleChoisi !== '' ? $modele->synthese($sigleChoisi) : null;
 
-        if (($_GET['export'] ?? '') === 'csv' && $synthese !== null) {
+        if (entree_get('export', '') === 'csv' && $synthese !== null) {
             $lignes = [];
             foreach ($synthese['penaux'] as $dossier) {
                 $lignes[] = [

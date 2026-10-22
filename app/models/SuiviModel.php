@@ -196,7 +196,7 @@ final class SuiviModel
         $erreurs = [];
         $donnees = [];
 
-        $annee = (int) ($_POST['annee'] ?? 0);
+        $annee = (int) entree_post('annee', 0);
         if ($annee < 1990 || $annee > 2100) {
             $erreurs[] = 'L\'année doit être comprise entre 1990 et 2100.';
         }
@@ -204,7 +204,7 @@ final class SuiviModel
 
         foreach ($def['champs'] as $champ) {
             $nom = $champ['nom'];
-            $valeur = trim((string) ($_POST[$nom] ?? ''));
+            $valeur = trim((string) entree_post($nom, ''));
 
             switch ($champ['type']) {
                 case 'nombre':
@@ -216,7 +216,7 @@ final class SuiviModel
                     break;
 
                 case 'booleen':
-                    $donnees[$nom] = !empty($_POST[$nom]) ? '1' : '0';
+                    $donnees[$nom] = !empty(entree_post($nom)) ? '1' : '0';
                     break;
 
                 default:

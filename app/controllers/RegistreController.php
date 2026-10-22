@@ -30,10 +30,10 @@ final class RegistreController
         match ($action) {
             'liste'      => $this->liste($definition),
             'creer'      => $this->formulaire($definition, null),
-            'modifier'   => $this->formulaire($definition, (int) ($_GET['id'] ?? 0)),
-            'fiche'      => $this->fiche($definition, (int) ($_GET['id'] ?? 0)),
-            'archiver'   => $this->archiver($definition, (int) ($_GET['id'] ?? 0)),
-            'conclusion' => $this->conclusion($definition, (int) ($_GET['id'] ?? 0)),
+            'modifier'   => $this->formulaire($definition, (int) entree_get('id', 0)),
+            'fiche'      => $this->fiche($definition, (int) entree_get('id', 0)),
+            'archiver'   => $this->archiver($definition, (int) entree_get('id', 0)),
+            'conclusion' => $this->conclusion($definition, (int) entree_get('id', 0)),
             default      => page_404('Action inconnue'),
         };
     }
@@ -42,12 +42,13 @@ final class RegistreController
 
     private function liste(array $definition): void
     {
-        $page      = max(1, (int) ($_GET['p'] ?? 1));
-        $recherche = trim((string) ($_GET['q'] ?? ''));
-        $annee     = isset($_GET['annee']) && $_GET['annee'] !== '' ? (int) $_GET['annee'] : null;
+        $page      = max(1, (int) entree_get('p', 1));
+        $recherche = trim((string) entree_get('q', ''));
+        $anneeBrute = (string) entree_get('annee', '');
+        $annee     = $anneeBrute !== '' ? (int) $anneeBrute : null;
 
         $modele = new RegistreModel($definition);
-        if (($_GET['export'] ?? '') === 'csv') {
+        if (entree_get('export', '') === 'csv') {
             $colonnes = array_map(static fn (array $c): array => [
                 'champ' => $c['nom'], 'libelle' => $c['libelle'], 'type' => $c['type'] ?? '',
             ], registre_colonnes($definition, 'liste'));
@@ -91,20 +92,21 @@ final class RegistreController
         $dossiersCivils = [];
         if ($definition['table'] === 'siege_cassation_civ') {
             $dossiersCivils = (new LiaisonRegistreModel())->dossiersCivils();
-            $idCivilPreselectionne = filter_var($_GET['dossier_civil'] ?? null, FILTER_VALIDATE_INT);
+            $idCivilPreselectionne = filter_var(entree_get('dossier_civil'), FILTER_VALIDATE_INT);
             if ($dossier === null && $idCivilPreselectionne !== false && $idCivilPreselectionne !== null && $idCivilPreselectionne > 0) {
                 $valeursFormulaire['id_reg_pourvoi_civ'] = (string) $idCivilPreselectionne;
             }
         }
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!Auth::verifierJeton($_POST['jeton'] ?? null)) {
+        if (requete_post()) {
+            if (!Auth::verifierJeton(entree_post('jeton'))) {
                 flash('erreur', 'Votre session a expiré. Rechargez la page puis réessayez.');
                 rediriger('/registres/' . $this->codeRegistre($definition));
             }
             foreach (registre_colonnes($definition, 'formulaire') as $colonne) {
                 $nom = $colonne['nom'];
-                if (isset($_POST[$nom]) && is_scalar($_POST[$nom])) {
-                    $valeursFormulaire[$nom] = (string) $_POST[$nom];
+                $valeurRecue = entree_post($nom);
+                if ($valeurRecue !== null && is_scalar($valeurRecue)) {
+                    $valeursFormulaire[$nom] = (string) $valeurRecue;
                 }
             }
             $donnees = $this->lireFormulaire($definition, $erreurs);
@@ -179,11 +181,11 @@ final class RegistreController
 
     private function archiver(array $definition, int $id): void
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        if (!requete_post()) {
             flash('erreur', 'Cette action doit être envoyée depuis le formulaire prévu.');
             rediriger('/registres/' . $this->codeRegistre($definition));
         }
-        if (!Auth::verifierJeton($_POST['jeton'] ?? null)) {
+        if (!Auth::verifierJeton(entree_post('jeton'))) {
             flash('erreur', 'Votre session a expiré. Rechargez la page puis réessayez.');
             rediriger('/registres/' . $this->codeRegistre($definition));
         }
@@ -212,12 +214,12 @@ final class RegistreController
             return;
         }
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!Auth::verifierJeton($_POST['jeton'] ?? null)) {
+        if (requete_post()) {
+            if (!Auth::verifierJeton(entree_post('jeton'))) {
                 flash('erreur', 'Votre session a expiré. Rechargez la page puis réessayez.');
                 rediriger('/registres/' . $this->codeRegistre($definition) . '/fiche?id=' . $id);
             }
-            $modele->enregistrerConclusion($id, (string) ($_POST['conclusion'] ?? ''));
+            $modele->enregistrerConclusion($id, (string) entree_post('conclusion', ''));
             flash('succes', 'La conclusion a été enregistrée.');
             rediriger('/registres/' . $this->codeRegistre($definition) . '/fiche?id=' . $id);
         }
@@ -252,7 +254,7 @@ final class RegistreController
         $donnees = [];
         foreach (registre_colonnes($definition, 'formulaire') as $colonne) {
             $nom  = $colonne['nom'];
-            $valeur = $_POST[$nom] ?? '';
+            $valeur = entree_post($nom, '');
             if (!is_scalar($valeur)) {
                 $erreurs[] = 'La valeur du champ « ' . $colonne['libelle'] . ' » est invalide.';
                 $valeur = '';

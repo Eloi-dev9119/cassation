@@ -26,12 +26,12 @@ final class AuthController
         }
 
         $erreur = null;
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!Auth::verifierJeton($_POST['jeton'] ?? null)) {
+        if (requete_post()) {
+            if (!Auth::verifierJeton(entree_post('jeton'))) {
                 $erreur = 'Session expirée, veuillez réessayer.';
             } else {
-                $email    = trim((string) ($_POST['email'] ?? ''));
-                $motDePasse = (string) ($_POST['motDePasse'] ?? '');
+                $email    = trim((string) entree_post('email', ''));
+                $motDePasse = (string) entree_post('motDePasse', '');
 
                 if ($email === '' || $motDePasse === '') {
                     $erreur = 'Veuillez renseigner votre e-mail et votre mot de passe.';
@@ -60,15 +60,15 @@ final class AuthController
         $etape = 'email';
         $erreurs = [];
         $question = null;
-        $email = trim((string) ($_POST['email'] ?? ($_GET['email'] ?? '')));
+        $email = trim((string) entree_post('email', entree_get('email', '')));
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST' && !Auth::verifierJeton($_POST['jeton'] ?? null)) {
+        if (requete_post() && !Auth::verifierJeton(entree_post('jeton'))) {
             $erreurs[] = 'Session expirée, veuillez réessayer.';
-        } elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['etape'] ?? '') === 'reponse') {
+        } elseif (requete_post() && entree_post('etape', '') === 'reponse') {
             $etape = 'reponse';
-            $reponse = trim((string) ($_POST['reponse'] ?? ''));
-            $nouveau = (string) ($_POST['motDePasse'] ?? '');
-            $confirm = (string) ($_POST['confirmation'] ?? '');
+            $reponse = trim((string) entree_post('reponse', ''));
+            $nouveau = (string) entree_post('motDePasse', '');
+            $confirm = (string) entree_post('confirmation', '');
 
             $req = Database::connexion()->prepare(
                 'SELECT id_client, question, reponse FROM pgcc_client WHERE login = :login LIMIT 1'
@@ -123,11 +123,11 @@ final class AuthController
      */
     public function deconnexion(): void
     {
-        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        if (!requete_post()) {
             rediriger(Auth::utilisateur() !== null ? '/tableau-de-bord' : '/connexion');
         }
 
-        if (!Auth::verifierJeton($_POST['jeton'] ?? null)) {
+        if (!Auth::verifierJeton(entree_post('jeton'))) {
             flash('erreur', 'Votre session a expiré, veuillez réessayer.');
             rediriger(Auth::utilisateur() !== null ? '/tableau-de-bord' : '/connexion');
         }
@@ -149,21 +149,21 @@ final class AuthController
         $postes = ['PG' => 'Procureur Général', 'AG' => 'Avocat Général', 'SG' => 'Secrétaire Général',
                    'secretaire_AG' => 'Secrétaire AG', 'Secretaire particulier PGCC' => 'Secrétaire particulier PGCC'];
 
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!Auth::verifierJeton($_POST['jeton'] ?? null)) {
+        if (requete_post()) {
+            if (!Auth::verifierJeton(entree_post('jeton'))) {
                 $erreurs = ['Session expirée, veuillez réessayer.'];
             } else {
                 $donnees = [
-                    'nom'         => trim((string) ($_POST['nom'] ?? '')),
-                    'prenom'      => trim((string) ($_POST['prenom'] ?? '')),
-                    'sexe'        => ($_POST['sexe'] ?? '') === 'feminin' ? 'feminin' : 'masculin',
-                    'email'       => trim((string) ($_POST['email'] ?? '')),
-                    'motDePasse'  => (string) ($_POST['motDePasse'] ?? ''),
-                    'confirmation'=> (string) ($_POST['confirmation'] ?? ''),
-                    'poste'       => (string) ($_POST['poste'] ?? ''),
-                    'sigleAG'     => trim((string) ($_POST['sigleAG'] ?? '')),
-                    'matricule'   => (string) ($_POST['matricule'] ?? ''),
-                    'bureau'      => (string) ($_POST['bureau'] ?? '0'),
+                    'nom'         => trim((string) entree_post('nom', '')),
+                    'prenom'      => trim((string) entree_post('prenom', '')),
+                    'sexe'        => entree_post('sexe', '') === 'feminin' ? 'feminin' : 'masculin',
+                    'email'       => trim((string) entree_post('email', '')),
+                    'motDePasse'  => (string) entree_post('motDePasse', ''),
+                    'confirmation'=> (string) entree_post('confirmation', ''),
+                    'poste'       => (string) entree_post('poste', ''),
+                    'sigleAG'     => trim((string) entree_post('sigleAG', '')),
+                    'matricule'   => (string) entree_post('matricule', ''),
+                    'bureau'      => (string) entree_post('bureau', '0'),
                 ];
 
                 $erreurs = $this->validerInscription($donnees);

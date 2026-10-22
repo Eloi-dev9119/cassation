@@ -14,14 +14,14 @@ final class RepartitionController
 
         $modele = new RepartitionModel();
 
-        $moisChoisi  = in_array($_GET['mois'] ?? '', RepartitionModel::MOIS, true)
-            ? (string) $_GET['mois']
+        $moisChoisi  = in_array(entree_get('mois', ''), RepartitionModel::MOIS, true)
+            ? (string) entree_get('mois')
             : RepartitionModel::MOIS[(int) date('n') - 1];
-        $anneeChoisie = (int) ($_GET['annee'] ?? $modele->derniereAnnee());
+        $anneeChoisie = (int) entree_get('annee', $modele->derniereAnnee());
 
         $donnees = $modele->parAvocatGeneral($moisChoisi, $anneeChoisie);
 
-        if (($_GET['export'] ?? '') === 'csv') {
+        if (entree_get('export', '') === 'csv') {
             $lignes = [];
             $totalPen = 0;
             $totalCiv = 0;
