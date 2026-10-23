@@ -134,6 +134,7 @@ rendre('auth/connexion.php', ['titrePage' => 't', 'erreur' => null], 'auth/conne
 rendre('auth/inscription.php', ['titrePage' => 't', 'postes' => ['PG' => 'PG'], 'erreurs' => []], 'auth/inscription (jeton CSRF)');
 rendre('auth/mot-de-passe-oublie.php', ['titrePage' => 't', 'etape' => 'reponse', 'erreurs' => [], 'question' => 'Q ?', 'email' => 'a@b.c'], 'auth/mot-de-passe-oublie (jeton CSRF)');
 rendre('profil/fiche.php', ['titrePage' => 't', 'membre' => $membre + ['mdp' => 'x']], 'profil/fiche');
+rendre('aide/index.php', ['titrePage' => 't'], 'aide/index (page d\'aide intégrée)');
 
 echo PHP_EOL . ($echecs === 0 ? 'TOUS LES RENDUS PASSENT' : "$echecs RENDU(S) EN ÉCHEC") . PHP_EOL;
 exit($echecs === 0 ? 0 : 1);

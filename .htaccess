@@ -5,7 +5,9 @@ RewriteEngine On
 RewriteBase /pgcc2/
 
 # Le code PHP, les sauvegardes, les migrations et les outils ne sont pas
-# accessibles directement par le navigateur.
+# accessibles directement par le navigateur. Les dossiers cachés non plus
+# (.git serait servi tel quel : le dépôt est dans le dossier publié).
+RewriteRule (?:^|/)\. - [F,L]
 RewriteRule ^(?:app|config|database|storage|tools|tests|backups)(?:/|$) - [F,L,NC]
 RewriteRule ^config\.php$ - [F,L,NC]
 

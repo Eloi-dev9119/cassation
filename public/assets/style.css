@@ -1537,6 +1537,11 @@ form [aria-invalid="true"] { border-color: #9d2929; }
     color: var(--encre);
     background: #ffffff;
 }
+
+/* --- Aide intégrée ------------------------------------------------------- */
+.aide-sommaire { margin: 0; padding-left: 1.2rem; }
+.aide-sommaire li { margin: 0.35rem 0; }
+.aide-sommaire a { font-weight: 650; }
 :root[data-theme="sombre"] .graphique-defilement svg text { fill: #34423f !important; }
 :root[data-theme="sombre"] .graphique-defilement svg line { stroke: #b8c4c1 !important; }
 

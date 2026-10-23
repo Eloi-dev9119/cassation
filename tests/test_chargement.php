@@ -53,7 +53,8 @@ echo '--- Classes métier ---' . PHP_EOL;
 foreach (['Auth','View','Database','Graphiques','RegistreModel','MemoireModel','SuiviModel',
           'SuiviDossierModel','RepartitionModel','DistributionModel','ClientModel','StatsModel',
           'AuthController','DashboardController','RegistreController','MemoireController','SuiviController',
-          'SuiviDossierController','RepartitionController','DistributionController','MembreController','ProfilController'] as $classe) {
+          'SuiviDossierController','RepartitionController','DistributionController','MembreController','ProfilController',
+          'AideController'] as $classe) {
     verifier(class_exists($classe), "classe $classe");
 }
 

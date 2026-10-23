@@ -2,6 +2,8 @@
 
 Application PHP 8 de gestion des registres et du suivi des dossiers du Parquet Général près la Cour Suprême. Elle partage la base `pgcc_utf8mb4` et les comptes utilisateurs avec PGCC v1.
 
+> **Guide utilisateur** : [`docs/guide-utilisateur.md`](docs/guide-utilisateur.md) — mode d'emploi complet pour les membres du Parquet (connexion, registres, mémoires, distributions, administration). Un condensé est intégré dans l'application, page **Aide** du menu principal.
+
 ## Démarrage local
 
 1. Démarrer Apache et MySQL dans XAMPP.

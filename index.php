@@ -65,6 +65,7 @@ try {
         'distributions'         => (new DistributionController())->index(),
         'membres'               => (new MembreController())->dispatch($route),
         'profil'                => (new ProfilController())->index(),
+        'aide'                  => (new AideController())->index(),
         'mot-de-passe-oublie'  => (new AuthController())->motDePasseOublie(),
         default                 => page_404('Page introuvable'),
     };

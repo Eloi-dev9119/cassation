@@ -64,6 +64,17 @@ $nbColonnes = $administration ? 9 : 8;
                                 <input type="hidden" name="source" value="<?= e($membre['source'] ?? 'client') ?>">
                                 <button name="action" value="valider" class="bouton bouton-mini bouton-vert">Valider</button>
                             </form>
+                            <?php if (($membre['source'] ?? 'client') === 'new'): ?>
+                            <form method="post" action="<?= e(url($baseUrl . '/attente')) ?>" style="display:inline"
+                                  data-confirm-title="Refuser l’inscription"
+                                  data-confirm="La demande sera définitivement supprimée. L’intéressé pourra refaire une demande s’il le souhaite. Confirmez-vous le refus ?"
+                                  data-confirm-label="Refuser" data-confirm-tone="danger">
+                                <input type="hidden" name="jeton" value="<?= e(Auth::jeton()) ?>">
+                                <input type="hidden" name="id" value="<?= (int) $membre['id_client'] ?>">
+                                <input type="hidden" name="source" value="<?= e($membre['source'] ?? 'client') ?>">
+                                <button name="action" value="refuser" class="bouton bouton-mini bouton-bordeaux">Refuser</button>
+                            </form>
+                            <?php endif; ?>
                         <?php elseif ($filtre === 'actifs'): ?>
                             <form method="post" action="<?= e(url($baseUrl . '/actifs')) ?>" style="display:inline"
                                   data-confirm-title="Mettre le membre à la retraite"

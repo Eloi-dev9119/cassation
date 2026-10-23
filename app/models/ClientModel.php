@@ -54,6 +54,21 @@ final class ClientModel
     }
 
     /**
+     * Refuse une demande d'inscription en attente et la supprime définitivement.
+     * Ne concerne que les demandes issues de pgcc_new_client (source 'new').
+     */
+    public function refuser(int $id, string $source = 'client'): bool
+    {
+        if ($source !== 'new') {
+            return false;
+        }
+        $db = Database::connexion();
+        $req = $db->prepare('DELETE FROM pgcc_new_client WHERE id_client = :id AND Admin_confirm = 0 LIMIT 1');
+        $req->execute(['id' => $id]);
+        return $req->rowCount() > 0;
+    }
+
+    /**
      * Valide un compte en attente et le rend actif.
      *
      * Deux sources possibles :

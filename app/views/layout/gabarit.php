@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?= e($titre) ?></title>
     <script src="<?= e(asset('theme.js') . '?v=3') ?>"></script>
-    <link rel="stylesheet" href="<?= e(asset('style.css') . '?v=9') ?>">
+    <link rel="stylesheet" href="<?= e(asset('style.css') . '?v=10') ?>">
     <script src="<?= e(asset('confirmations.js')) ?>" defer></script>
 </head>
 <body>
@@ -63,6 +63,7 @@
         </div>
 
         <a href="<?= e(url('/profil')) ?>">Mes Informations</a>
+        <a href="<?= e(url('/aide')) ?>">Aide</a>
     </nav>
     <div class="utilisateur">
         <span class="utilisateur-nom"><?= e(Auth::nomComplet()) ?></span>

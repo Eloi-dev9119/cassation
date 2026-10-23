@@ -67,6 +67,14 @@ final class MembreController
                 flash('succes', 'Le compte a été validé. Le membre peut désormais se connecter.');
                 break;
 
+            case 'refuser':
+                if ($modele->refuser($id, $source === 'new' ? 'new' : 'client')) {
+                    flash('info', 'La demande d\'inscription a été refusée et supprimée.');
+                } else {
+                    flash('erreur', 'Impossible de refuser cette demande. Elle a peut-être déjà été traitée.');
+                }
+                break;
+
             case 'retraite':
                 $modele->changerStatus($id, 'Retraite');
                 flash('info', 'Le membre a été mis à la retraite.');
