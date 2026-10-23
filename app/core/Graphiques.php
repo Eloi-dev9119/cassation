@@ -43,9 +43,9 @@ final class Graphiques
         }
 
         $couleurs = [
-            'Pénaux' => '#7B2D3B',
-            'Civils' => '#2C3E50',
-            'Arrivées' => '#A95312',
+            'Pénaux' => '#8A4E52',
+            'Civils' => '#43566A',
+            'Arrivées' => '#A57C4B',
         ];
         $echelleY = ($hauteur - $margeH - $margeB) / $maximum;
         $svg = self::ouvrirSvg($largeur, $hauteur, 'Volume de dossiers par année');
@@ -54,9 +54,9 @@ final class Graphiques
             $valeur = (int) round($maximum * $g / 4);
             $y = $hauteur - $margeB - $valeur * $echelleY;
             $svg .= '<line x1="' . $margeG . '" y1="' . $y . '" x2="' . ($largeur - $margeD)
-                  . '" y2="' . $y . '" stroke="#C7D0D9" stroke-width="1"/>';
+                  . '" y2="' . $y . '" stroke="#D6D5CE" stroke-width="1"/>';
             $svg .= '<text x="' . ($margeG - 9) . '" y="' . ($y + 5)
-                  . '" text-anchor="end" font-size="13" fill="#465666">' . $valeur . '</text>';
+                  . '" text-anchor="end" font-size="13" fill="#5F6A75">' . $valeur . '</text>';
         }
 
         foreach ($annees as $position => $annee) {
@@ -68,7 +68,7 @@ final class Graphiques
                 $hauteurBarre = $valeur * $echelleY;
                 $x = $xGroupe + ($numeroSerie + 0.5) * $largeurBarre;
                 $y = $hauteur - $margeB - $hauteurBarre;
-                $couleur = $couleurs[$libelle] ?? '#49647A';
+                $couleur = $couleurs[$libelle] ?? '#6E7883';
                 $titre = self::echapper($libelle . ' ' . (int) $annee . ' : ' . $valeur);
                 $svg .= '<rect x="' . round($x, 1) . '" y="' . round($y, 1)
                       . '" width="' . round($largeurBarre * 0.82, 1)
@@ -78,16 +78,16 @@ final class Graphiques
             }
 
             $svg .= '<text x="' . ($xGroupe + $largeurGroupe / 2) . '" y="' . ($hauteur - 15)
-                  . '" text-anchor="middle" font-size="14" font-weight="600" fill="#263746">'
+                  . '" text-anchor="middle" font-size="14" font-weight="600" fill="#323A44">'
                   . (int) $annee . '</text>';
         }
 
         $xLegende = $margeG;
         foreach ($series as $libelle => $_) {
-            $couleur = $couleurs[$libelle] ?? '#49647A';
+            $couleur = $couleurs[$libelle] ?? '#6E7883';
             $svg .= '<rect x="' . $xLegende . '" y="14" width="14" height="14" fill="'
                   . $couleur . '" rx="3"/>';
-            $svg .= '<text x="' . ($xLegende + 21) . '" y="26" font-size="14" fill="#263746">'
+            $svg .= '<text x="' . ($xLegende + 21) . '" y="26" font-size="14" fill="#323A44">'
                   . self::echapper((string) $libelle) . '</text>';
             $xLegende += max(130, strlen((string) $libelle) * 8 + 38);
         }
@@ -140,9 +140,9 @@ final class Graphiques
             $valeur = (int) round($maximum * $g / 4);
             $y = $hauteur - $margeB - $valeur * $echelleY;
             $svg .= '<line x1="' . $margeG . '" y1="' . $y . '" x2="' . ($largeur - $margeD)
-                  . '" y2="' . $y . '" stroke="#C7D0D9" stroke-width="1"/>';
+                  . '" y2="' . $y . '" stroke="#D6D5CE" stroke-width="1"/>';
             $svg .= '<text x="' . ($margeG - 9) . '" y="' . ($y + 5)
-                  . '" text-anchor="end" font-size="13" fill="#465666">' . $valeur . '</text>';
+                  . '" text-anchor="end" font-size="13" fill="#5F6A75">' . $valeur . '</text>';
         }
 
         foreach ($labels as $i => $sigle) {
@@ -152,8 +152,8 @@ final class Graphiques
 
             foreach (
                 [
-                    [$valeurPenale, '#7B2D3B', 0.5, 'Pénaux'],
-                    [$valeurCivile, '#2C3E50', 1.5, 'Civils'],
+                    [$valeurPenale, '#8A4E52', 0.5, 'Pénaux'],
+                    [$valeurCivile, '#43566A', 1.5, 'Civils'],
                 ] as [$valeur, $couleur, $positionBarre, $type]
             ) {
                 $hauteurBarre = $valeur * $echelleY;
@@ -166,16 +166,16 @@ final class Graphiques
             }
 
             $svg .= '<text x="' . ($xGroupe + $largeurGroupe / 2) . '" y="' . ($hauteur - 16)
-                  . '" text-anchor="middle" font-size="14" font-weight="600" fill="#263746">'
+                  . '" text-anchor="middle" font-size="14" font-weight="600" fill="#323A44">'
                   . self::echapper((string) $sigle) . '</text>';
         }
 
-        $svg .= '<rect x="' . $margeG . '" y="14" width="14" height="14" fill="#7B2D3B" rx="3"/>'
-              . '<text x="' . ($margeG + 21) . '" y="26" font-size="14" fill="#263746">Pénaux</text>'
-              . '<rect x="' . ($margeG + 116) . '" y="14" width="14" height="14" fill="#2C3E50" rx="3"/>'
-              . '<text x="' . ($margeG + 137) . '" y="26" font-size="14" fill="#263746">Civils</text>'
+        $svg .= '<rect x="' . $margeG . '" y="14" width="14" height="14" fill="#8A4E52" rx="3"/>'
+              . '<text x="' . ($margeG + 21) . '" y="26" font-size="14" fill="#323A44">Pénaux</text>'
+              . '<rect x="' . ($margeG + 116) . '" y="14" width="14" height="14" fill="#43566A" rx="3"/>'
+              . '<text x="' . ($margeG + 137) . '" y="26" font-size="14" fill="#323A44">Civils</text>'
               . '<text x="' . ($largeur - $margeD) . '" y="26" text-anchor="end" '
-              . 'font-size="14" fill="#465666">' . self::echapper($libelleMois) . '</text>';
+              . 'font-size="14" fill="#5F6A75">' . self::echapper($libelleMois) . '</text>';
 
         return $svg . '</svg></div>';
     }
