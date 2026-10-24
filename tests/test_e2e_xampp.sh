@@ -431,6 +431,56 @@ SR=$(db1 "SELECT status FROM pgcc_client WHERE login='$REG_EMAIL'")
 MPA=$(db1 "SELECT modifie_par FROM pgcc_client WHERE login='$REG_EMAIL'")
 [ "$MPA" = "$TEST_EMAIL" ]; check "T-85" $? "traçabilité : modifie_par=$MPA"
 
+echo "══════════ 9bis. Espace Administration ══════════"
+curl -s -b $J2 -o $W/adm1.html "$B?r=/administration"
+grep -q "Tableau de bord admin" $W/adm1.html; check "T-120" $? "tableau de bord admin accessible au poste PG"
+curl -s -b $J2 -o $W/adm2.html "$B?r=/administration/comptes"
+grep -q "Comptes utilisateurs" $W/adm2.html; check "T-120b" $? "liste des comptes accessible"
+ADM_EMAIL="TEST.creation.adm.$SUF@pgcc.com"
+curl -s -b $J2 -L -o $W/adm3.html \
+  --data-urlencode "nom=TESTADM" --data-urlencode "prenom=Creation" --data-urlencode "sexe=feminin" \
+  --data-urlencode "email=$ADM_EMAIL" --data-urlencode "poste=AG" --data-urlencode "sigleAG=TA$SIG_SUFFIX" \
+  --data-urlencode "matricule=$((IMLIBRE+1))" --data-urlencode "bureau=" --data-urlencode "status=Actifs" \
+  --data-urlencode "motDePasse=AdmTest2026!" --data-urlencode "confirmation=AdmTest2026!" \
+  --data-urlencode "jeton=$JTA" "$B?r=/administration/comptes/creer" >/dev/null
+ADMID=$(db1 "SELECT id_client FROM pgcc_client WHERE login='$ADM_EMAIL'")
+[ -n "$ADMID" ]; check "T-121" $? "création d'un compte depuis l'administration (id=$ADMID)"
+[ "$(db1 "SELECT CONCAT(status,'/',valide,'/',num_bureau) FROM pgcc_client WHERE id_client=$ADMID")" = "Actifs/1/0" ]
+check "T-121b" $? "compte créé actif et bureau vide ramené à 0"
+curl -s -b $J2 -L -o /dev/null \
+  --data-urlencode "nom=TESTADM2" --data-urlencode "prenom=Creation2" --data-urlencode "sexe=masculin" \
+  --data-urlencode "email=$ADM_EMAIL" --data-urlencode "poste=SG" --data-urlencode "sigleAG=TS$SIG_SUFFIX" \
+  --data-urlencode "matricule=$((IMLIBRE+2))" --data-urlencode "bureau=42" --data-urlencode "status=Actifs" \
+  --data-urlencode "jeton=$JTA" "$B?r=/administration/comptes/modifier&id=$ADMID" >/dev/null
+ADMMOD=$(db1 "SELECT CONCAT(nom,'/',poste,'/',num_bureau) FROM pgcc_client WHERE id_client=$ADMID")
+[ "$ADMMOD" = "TESTADM2/SG/42" ]; check "T-122" $? "modification du compte ($ADMMOD)"
+curl -s -b $J2 -L -o /dev/null --data-urlencode "action=retraite" --data-urlencode "id=$ADMID" \
+  --data-urlencode "source=client" --data-urlencode "jeton=$JTA" "$B?r=/administration/comptes/action" >/dev/null
+[ "$(db1 "SELECT status FROM pgcc_client WHERE id_client=$ADMID")" = "Retraite" ]
+check "T-123" $? "mise à la retraite depuis l'administration"
+curl -s -b $J2 -L -o /dev/null --data-urlencode "action=reactiver" --data-urlencode "id=$ADMID" \
+  --data-urlencode "source=client" --data-urlencode "jeton=$JTA" "$B?r=/administration/comptes/action" >/dev/null
+[ "$(db1 "SELECT status FROM pgcc_client WHERE id_client=$ADMID")" = "Actifs" ]
+check "T-124" $? "réactivation depuis l'administration"
+curl -s -b $J2 -L -o /dev/null --data-urlencode "action=motdepasse" --data-urlencode "id=$ADMID" \
+  --data-urlencode "source=client" --data-urlencode "jeton=$JTA" "$B?r=/administration/comptes/action" >/dev/null
+ADMMDP=$(db1 "SELECT mdp FROM pgcc_client WHERE id_client=$ADMID")
+ADMPAR=$(db1 "SELECT modifie_par FROM pgcc_client WHERE id_client=$ADMID")
+case "$ADMMDP" in \$2y\$*) ADMBC=ok;; *) ADMBC=ko;; esac
+[ "$ADMBC" = "ok" ] && [ "$ADMPAR" = "$TEST_EMAIL" ]
+check "T-125" $? "réinitialisation mdp (bcrypt) et traçabilité modifie_par=$ADMPAR"
+curl -s -b $J2 -o $W/adm4.html "$B?r=/administration/comptes&filtre=actifs"
+grep -q "$ADM_EMAIL" $W/adm4.html; check "T-126" $? "compte recherché dans la liste filtrée"
+curl -s -b $J2 -o $W/adm5.html "$B?r=/administration/audit"
+grep -qi "journal" $W/adm5.html && ! grep -qE "Fatal error|Warning:|Notice:" $W/adm5.html
+check "T-127" $? "journal d'activité consultable sans erreur PHP"
+rm -f /tmp/e2e_j4.txt; curl -s -c /tmp/e2e_j4.txt "$B?r=/connexion" -o $W/connA4.html
+curl -s -b /tmp/e2e_j4.txt -c /tmp/e2e_j4.txt -L -o /dev/null --data-urlencode "email=$TEST_AG1_EMAIL" \
+  --data-urlencode "motDePasse=$TEST_PASSWORD" --data-urlencode "jeton=$(jeton $W/connA4.html)" \
+  "$B?r=/connexion" >/dev/null
+curl -s -b /tmp/e2e_j4.txt -L -o $W/adm6.html "$B?r=/administration"
+grep -q "réservé aux postes habilités" $W/adm6.html; check "T-128" $? "accès administration refusé à un poste AG"
+
 echo "══════════ 10. Mes Informations (profil) ══════════"
 curl -s -b $J1 -o $W/prof.html "$B?r=/profil"
 curl -s -b $J1 -L -o $W/t90.html --data "$(fill_form $W/prof.html)" \

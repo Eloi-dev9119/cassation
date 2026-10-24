@@ -18,7 +18,7 @@ page **Aide** (menu principal).
 6. [Distributions aux Avocats Généraux](#6-distributions-aux-avocats-généraux)
 7. [Répartition des dossiers](#7-répartition-des-dossiers)
 8. [Suivis Dossiers par Avocat Général](#8-suivis-dossiers-par-avocat-général)
-9. [Gestion des membres (administration)](#9-gestion-des-membres-administration)
+9. [Espace d'administration](#9-espace-dadministration)
 10. [Mes informations et mot de passe](#10-mes-informations-et-mot-de-passe)
 11. [Recherche, filtres, exports et impression](#11-recherche-filtres-exports-et-impression)
 12. [Questions fréquentes](#12-questions-fréquentes)
@@ -59,7 +59,8 @@ l'administration (voir §9) : elle peut réinitialiser votre mot de passe.
 1. Sur la page de connexion, cliquer **« Créer un compte »**.
 2. Renseigner nom, prénom, e-mail, matricule (IM), poste et bureau.
 3. La demande est enregistrée **en attente de validation** : un membre
-   de l'administration (PG ou SG) la valide depuis le module Membres.
+   de l'administration (PG ou SG) la valide depuis Administration >
+   Comptes utilisateurs (ou depuis Membres).
    Vous recevrez votre accès une fois la demande acceptée.
 
 ## 2. Tableau de bord
@@ -204,14 +205,54 @@ affiché par défaut) :
 
 La synthèse est exportable en CSV (§11).
 
-## 9. Gestion des membres (administration)
+## 9. Espace d'administration
 
-La consultation des listes est ouverte à tous ; **les actions sont
-réservées à l'administration** (postes **PG** — Procureur Général — et
-**SG** — Secrétaire Général ; les autres membres ne voient pas les
-boutons d'action).
+Le menu **Administration** n'apparaît que pour les postes **PG**
+(Procureur Général) et **SG** (Secrétaire Général). Il donne accès à un
+tableau de bord, à la gestion des comptes et au journal d'activité.
+Toute tentative d'accès direct à ces pages par un autre poste affiche
+une page introuvable.
 
-Trois onglets :
+### 9.1 Tableau de bord
+
+Le tableau de bord présente le nombre de comptes actifs, de demandes en
+attente, de retraités et de comptes au total, ainsi que les volumes de
+dossiers (pourvois pénaux et civils, mémoires, dossiers en détention).
+Il affiche également les dernières activités enregistrées et un accès
+direct aux demandes d'inscription à traiter.
+
+### 9.2 Comptes utilisateurs
+
+La page **Comptes utilisateurs** liste les comptes avec recherche par
+nom, prénom, e-mail ou sigle, et quatre filtres : *Tous*, *Actifs*,
+*Retraités*, *En attente*.
+
+- **Créer un compte** : renseigner nom, prénom, sexe, e-mail
+  (identifiant unique), poste, sigle, matricule, bureau, statut et mot
+  de passe initial. Le compte est immédiatement actif ; aucun passage
+  par la validation n'est nécessaire.
+- **Modifier** : corriger l'identité, le poste, le sigle, le matricule,
+  le bureau ou le statut. Un e-mail déjà utilisé par un autre compte est
+  refusé.
+- **Retraite** / **Réactiver** : coupe ou restaure l'accès sans
+  supprimer les données du membre.
+- **Réinit. mdp** : remplace le mot de passe par « `pgcc` » suivi de
+  l'année courante (ex. `pgcc2026`). Transmettez-le par un canal sûr ;
+  le membre le changera dans **Mes Informations**.
+
+Le mot de passe n'est jamais affiché en clair et n'est pas modifiable
+depuis le formulaire d'édition : seule la réinitialisation est prévue.
+
+### 9.3 Journal d'activité
+
+Le journal reprend les 200 créations et modifications les plus récentes
+enregistrées par les colonnes d'audit des tables métier
+(`date_creation`, `date_modification`, `cree_par`, `modifie_par`). Il
+est consultable à l'écran et imprimable.
+
+### 9.4 Validation des inscriptions
+
+Trois onglets restent disponibles depuis **Membres** :
 
 - **En attente de validation** : demandes d'inscription (table
   `pgcc_new_client`) et anciens comptes jamais validés.
@@ -292,7 +333,8 @@ Filtrez si besoin, videz la recherche pour tout inclure, exportez en
 CSV ou imprimez page par page depuis le navigateur.
 
 **Qui contacter pour un accès ?**
-L'administration du Parquet (postes PG ou SG) via le module Membres.
+L'administration du Parquet (postes PG ou SG) via le menu
+Administration puis Comptes utilisateurs.
 
 ---
 

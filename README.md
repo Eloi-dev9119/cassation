@@ -52,6 +52,10 @@ L’outil `tools/maintenance/executer_relations.php` est conservé pour une inte
 
 L’outil `tools/maintenance/compter_mdp_legacy.php` compte, en lecture seule, les empreintes de mots de passe encore stockées en MD5 dans les tables de comptes. La vérification MD5 de `app/core/Password.php` — nécessaire tant que PGCC v1 écrit encore du MD5 dans la table partagée — pourra être retirée quand cet outil annonce zéro et que v1 n’est plus utilisée.
 
+## Espace d'administration
+
+Le menu **Administration** n'est affiché qu'aux postes habilités (`POSTES_ADMINISTRATION`, par défaut **PG** et **SG**). Il regroupe le tableau de bord administrateur, la gestion des comptes utilisateurs (création, modification, retraite/réactivation, réinitialisation du mot de passe) et le journal d'activité issu des colonnes d'audit. Les demandes d'inscription restent traitables depuis **Membres** ou depuis **Administration > Comptes utilisateurs**. Toute tentative d'accès direct par un autre poste est refusée.
+
 ## Vérifications
 
 Les scripts de vérification se trouvent dans `tests/`. Le parcours E2E dépend d’une instance XAMPP et d’une base de test jetable. Il refuse toute base qui ne commence pas par `pgcc_e2e_` et vérifie la base cible avant ses écritures. Consulter `tests/test_e2e_xampp.sh` avant de le lancer.

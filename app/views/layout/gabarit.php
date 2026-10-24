@@ -62,6 +62,18 @@
             </div>
         </div>
 
+        <?php if (est_administration()): ?>
+        <div class="menu-groupe">
+            <a href="#" onclick="return deroulerMenu(event, 'menu-administration')">Administration ▾</a>
+            <div class="menu-deroulant" id="menu-administration">
+                <a href="<?= e(url('/administration')) ?>"><strong>Tableau de bord admin</strong></a>
+                <a href="<?= e(url('/administration/comptes')) ?>">Comptes utilisateurs</a>
+                <a href="<?= e(url('/administration/audit')) ?>">Journal d’activité</a>
+                <a href="<?= e(url('/membres/attente')) ?>">Demandes en attente</a>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <a href="<?= e(url('/profil')) ?>">Mes Informations</a>
         <a href="<?= e(url('/aide')) ?>">Aide</a>
     </nav>

@@ -146,8 +146,7 @@ final class AuthController
      */
     public function inscription(): void
     {
-        $postes = ['PG' => 'Procureur Général', 'AG' => 'Avocat Général', 'SG' => 'Secrétaire Général',
-                   'secretaire_AG' => 'Secrétaire AG', 'Secretaire particulier PGCC' => 'Secrétaire particulier PGCC'];
+        $postes = POSTES_UTILISATEUR;
 
         if (requete_post()) {
             if (!Auth::verifierJeton(entree_post('jeton'))) {

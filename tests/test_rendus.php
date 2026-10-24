@@ -120,6 +120,47 @@ rendre('membres/liste.php', [
     'utilisateur' => ['id' => 2, 'nom' => 'X', 'prenom' => 'Y', 'login' => 'y@pgcc.com', 'poste' => 'AG', 'sigleAG' => ''],
 ], 'membres/liste onglet attente (non-admin : pas de bouton)');
 
+echo '--- Espace administration ---' . PHP_EOL;
+$compteAdmin = [
+    'id_client' => 7, 'nom' => 'RAKOTO', 'prenom' => 'Jean', 'sexe' => 'masculin',
+    'login' => 'j.rakoto@pgcc.com', 'poste' => 'PG', 'sigle_AG' => 'JRK', 'IM' => 123,
+    'num_bureau' => 4, 'valide' => 1, 'status' => 'Actifs', 'source' => 'client',
+    'date_creation' => '2025-01-10 08:30:00', 'date_modification' => null,
+    'cree_par' => 'system', 'modifie_par' => null,
+];
+$journalAdmin = [[
+    'module' => 'Pourvois pénaux', 'reference' => '2025-0123', 'cree_par' => 'j.rakoto@pgcc.com',
+    'modifie_par' => null, 'date_creation' => '2025-01-10 08:30:00',
+    'date_modification' => null, 'derniere_date' => '2025-01-10 08:30:00',
+]];
+rendre('administration/tableau.php', [
+    'titrePage' => 't',
+    'compteurs' => ['total' => 12, 'actifs' => 10, 'retraites' => 1,
+        'attenteNouvelles' => 0, 'attenteHistoriques' => 1, 'enAttente' => 1],
+    'dossiers' => ['penaux' => 20, 'civils' => 5, 'memoires' => 8, 'detentions' => 4],
+    'journal' => $journalAdmin,
+], 'administration/tableau (compteurs et journal)');
+rendre('administration/comptes.php', [
+    'titrePage' => 't', 'filtre' => 'actifs', 'recherche' => '', 'comptes' => [$compteAdmin],
+], 'administration/comptes (comptes actifs)');
+rendre('administration/comptes.php', [
+    'titrePage' => 't', 'filtre' => 'attente', 'recherche' => '',
+    'comptes' => [['id_client' => 9, 'nom' => 'RABE', 'prenom' => 'Ada', 'login' => 'a.rabe@pgcc.com',
+        'poste' => 'AG', 'sigle_AG' => 'ARB', 'IM' => 456, 'num_bureau' => 2,
+        'valide' => 0, 'status' => 'En attente', 'source' => 'new']],
+], 'administration/comptes (demandes en attente)');
+rendre('administration/formulaire.php', [
+    'titrePage' => 't', 'mode' => 'creer', 'compte' => null,
+    'valeurs' => [], 'erreurs' => [], 'postes' => POSTES_UTILISATEUR,
+], 'administration/formulaire création');
+rendre('administration/formulaire.php', [
+    'titrePage' => 't', 'mode' => 'modifier', 'compte' => $compteAdmin,
+    'valeurs' => $compteAdmin, 'erreurs' => [], 'postes' => POSTES_UTILISATEUR,
+], 'administration/formulaire modification (traçabilité)');
+rendre('administration/audit.php', [
+    'titrePage' => 't', 'journal' => $journalAdmin,
+], 'administration/audit (journal complet)');
+
 echo '--- Autres vues ---' . PHP_EOL;
 rendre('dashboard/accueil.php', [
     'titrePage' => 't',

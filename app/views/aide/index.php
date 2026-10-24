@@ -17,7 +17,7 @@
         <li><a href="#registres">Registres et dossiers</a></li>
         <li><a href="#memoires">Mémoires</a></li>
         <li><a href="#distributions">Distributions et répartition</a></li>
-        <li><a href="#membres">Membres (administration)</a></li>
+        <li><a href="#membres">Administration (PG/SG)</a></li>
         <li><a href="#profil">Mes informations et mot de passe</a></li>
         <li><a href="#listes">Recherche, export CSV et impression</a></li>
         <li><a href="#faq">Questions fréquentes</a></li>
@@ -77,9 +77,13 @@
 </div>
 
 <div class="carte">
-    <h2 id="membres">Membres (administration)</h2>
+    <h2 id="membres">Administration (PG/SG)</h2>
     <ul>
-        <li>Les listes sont consultables par tous ; <strong>les actions sont réservées aux postes PG et SG</strong>.</li>
+        <li>Le menu <strong>Administration</strong> n'apparaît que pour les postes <strong>PG</strong> et <strong>SG</strong>. Il donne accès au tableau de bord, aux comptes utilisateurs et au journal d'activité.</li>
+        <li><strong>Créer un compte</strong> : le compte est immédiatement actif ; l'e-mail doit être unique.</li>
+        <li><strong>Modifier un compte</strong> : identité, poste, sigle, matricule, bureau et statut. Le mot de passe se réinitialise depuis la liste des comptes.</li>
+        <li><strong>Journal d'activité</strong> : 200 dernières créations et modifications enregistrées dans les tables métier ; consultable et imprimable.</li>
+        <li>Les listes de membres restent consultables par tous ; <strong>les actions sont réservées aux postes PG et SG</strong>.</li>
         <li><strong>Valider</strong> une inscription : le compte devient actif ; si un compte du même e-mail existait déjà, il est réactivé et le mot de passe choisi à l'inscription est appliqué.</li>
         <li><strong>Refuser</strong> une inscription en attente : la demande est supprimée définitivement de <code>pgcc_new_client</code> et l'e-mail pourra faire une nouvelle demande.</li>
         <li><strong>Mettre à la retraite</strong> / <strong>Réactiver</strong> : coupe ou restaure l'accès, sans perdre les données.</li>
@@ -114,7 +118,7 @@
         <li><strong>Un dossier apparaît dans deux registres ?</strong> Les registres sont indépendants. Un mémoire peut être relié à un dossier pénal et le siège est relié aux dossiers civils ; les fiches affichent ces liaisons.</li>
         <li><strong>J'ai supprimé un mémoire par erreur.</strong> La suppression ne touche que le registre des mémoires. Il suffit de recréer le mémoire ; en cas de doublon de numéro, choisissez le dossier source précis.</li>
         <li><strong>Comment imprimer un registre complet ?</strong> Filtrez si besoin, videz la recherche pour tout inclure, exportez en CSV ou imprimez page par page depuis le navigateur.</li>
-        <li><strong>Qui contacter pour un accès ?</strong> L'administration du Parquet (postes PG ou SG) via le module Membres.</li>
+        <li><strong>Qui contacter pour un accès ?</strong> L'administration du Parquet (postes PG ou SG), via le menu Administration puis Comptes utilisateurs.</li>
     </ul>
     <p><a href="#sommaire">↑ Retour au sommaire</a></p>
 </div>

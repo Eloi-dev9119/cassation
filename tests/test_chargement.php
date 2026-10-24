@@ -52,15 +52,17 @@ verifier(strlen(Auth::jeton()) === 64, 'Auth::jeton() génère 64 hex');
 echo '--- Classes métier ---' . PHP_EOL;
 foreach (['Auth','View','Database','Graphiques','RegistreModel','MemoireModel','SuiviModel',
           'SuiviDossierModel','RepartitionModel','DistributionModel','ClientModel','StatsModel',
-          'AuthController','DashboardController','RegistreController','MemoireController','SuiviController',
-          'SuiviDossierController','RepartitionController','DistributionController','MembreController','ProfilController',
-          'AideController'] as $classe) {
+          'AdministrationModel','AuthController','DashboardController','RegistreController','MemoireController',
+          'SuiviController','SuiviDossierController','RepartitionController','DistributionController',
+          'MembreController','AdministrationController','ProfilController','AideController'] as $classe) {
     verifier(class_exists($classe), "classe $classe");
 }
 
 echo '--- Constantes de configuration ---' . PHP_EOL;
 verifier(defined('POSTES_ADMINISTRATION'), 'POSTES_ADMINISTRATION définie (T83)');
 verifier(in_array('PG', POSTES_ADMINISTRATION, true), 'PG habilité par défaut');
+verifier(defined('POSTES_UTILISATEUR'), 'POSTES_UTILISATEUR définie (administration)');
+verifier(array_key_exists('AG', POSTES_UTILISATEUR), 'poste AG proposé à la création de compte');
 
 echo PHP_EOL . ($echecs === 0 ? 'TOUS LES TESTS PASSENT' : "$echecs ÉCHEC(S)") . PHP_EOL;
 exit($echecs === 0 ? 0 : 1);

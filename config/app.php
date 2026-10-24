@@ -40,6 +40,16 @@ const LIGNES_PAR_PAGE = 25;
 // passe). Ajuster si les codes de postes de la base diffèrent.
 const POSTES_ADMINISTRATION = ['PG', 'SG'];
 
+// Postes proposés à l'inscription et à la création d'un compte par
+// l'administration. Les clés sont les codes stockés dans pgcc_client.poste.
+const POSTES_UTILISATEUR = [
+    'PG'                        => 'Procureur Général',
+    'AG'                        => 'Avocat Général',
+    'SG'                        => 'Secrétaire Général',
+    'secretaire_AG'             => 'Secrétaire AG',
+    'Secretaire particulier PGCC' => 'Secrétaire particulier PGCC',
+];
+
 // --- Erreurs ----------------------------------------------------------------
 // Les erreurs restent journalisées. Seul leur affichage HTTP dépend du mode debug.
 define('DEBUG', filter_var(getenv('PGCC_DEBUG') ?: 'false', FILTER_VALIDATE_BOOLEAN));

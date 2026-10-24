@@ -13,6 +13,16 @@ require __DIR__ . '/config.php';
 require APP_CHEMIN . '/app/core/helpers.php';
 require APP_CHEMIN . '/app/models/Registres.php';
 
+// Serveur PHP intégré (php -S) : les fichiers statiques publics ne passent
+// pas par le routeur. Sous Apache, le .htaccess s'en charge déjà.
+if (PHP_SAPI === 'cli-server') {
+    $cheminStatique = parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/';
+    if (str_starts_with($cheminStatique, '/public/assets/')
+        && is_file(__DIR__ . $cheminStatique)) {
+        return false;
+    }
+}
+
 /**
  * Charge une classe depuis le dossier correspondant à sa couche.
  * Les fonctions partagées et les définitions de registres sont chargées
@@ -64,6 +74,7 @@ try {
         'repartition'           => (new RepartitionController())->index(),
         'distributions'         => (new DistributionController())->index(),
         'membres'               => (new MembreController())->dispatch($route),
+        'administration'        => (new AdministrationController())->dispatch($route),
         'profil'                => (new ProfilController())->index(),
         'aide'                  => (new AideController())->index(),
         'mot-de-passe-oublie'  => (new AuthController())->motDePasseOublie(),
