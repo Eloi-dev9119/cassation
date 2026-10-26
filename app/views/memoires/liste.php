@@ -17,7 +17,7 @@ $baseUrl = '/memoires'; // route interne brute, passée dans url() à l'affichag
 <div class="carte" style="padding:0;border:none;background:transparent">
     <form class="filtres" method="get" action="<?= e(url($baseUrl)) ?>">
         <input type="hidden" name="r" value="<?= e($baseUrl) ?>">
-        <input type="search" name="q" placeholder="N° dossier, parties, avocat…" value="<?= e($recherche) ?>">
+        <input type="search" name="q" placeholder="N° dossier, pièces, déposant, juridiction…" value="<?= e($recherche) ?>">
         <select name="type">
             <option value="">Tous les types</option>
             <?php foreach (MemoireModel::TYPES as $code => $libelle): ?>
@@ -40,7 +40,7 @@ $baseUrl = '/memoires'; // route interne brute, passée dans url() à l'affichag
         <thead>
             <tr>
                 <th>N° ordre</th><th>Année</th><th>Type</th><th>Origine</th><th>N° dossier PGCS</th>
-                <th>Parties</th><th>Avocat</th><th>Dépôt</th><th>Rapporteur</th><th>État</th>
+                <th>Pièces</th><th>Déposant</th><th>Juridiction</th><th>Dépôt</th><th>État</th>
                 <th style="width:210px">Actions</th>
             </tr>
         </thead>
@@ -57,8 +57,8 @@ $baseUrl = '/memoires'; // route interne brute, passée dans url() à l'affichag
                     <td><?= e($memoire['num_dossier_PGCS']) ?></td>
                     <td class="rogne"><?= e($memoire['parties'] ?: '—') ?></td>
                     <td class="rogne"><?= e($memoire['avocat'] ?: '—') ?></td>
+                    <td class="rogne"><?= e($memoire['juridiction'] ?? '') !== '' ? e($memoire['juridiction']) : '—' ?></td>
                     <td><?= e(date_fr($memoire['date_depot'])) ?></td>
-                    <td class="rogne"><?= e($memoire['rapporteur'] ?: '—') ?></td>
                     <td>
                         <span class="badge <?= match ($memoire['etat']) {
                             'depose' => 'badge-gris', 'transmis' => 'badge-bleu',

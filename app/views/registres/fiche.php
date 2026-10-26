@@ -88,7 +88,7 @@ $colonneConclusion = $definition['conclusion'];
     <?php else: ?>
         <table class="liste">
             <thead>
-                <tr><th>N°</th><th>Type</th><th>Date dépôt</th><th>Avocat</th><th>État</th><th></th></tr>
+                <tr><th>N°</th><th>Type</th><th>Date dépôt</th><th>Déposant</th><th>État</th><th></th></tr>
             </thead>
             <tbody>
                 <?php foreach ($memoires as $memoire): ?>

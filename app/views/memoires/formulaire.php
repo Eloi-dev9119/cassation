@@ -97,28 +97,20 @@ $confirmationBouton = $enCreation ? 'Ajouter le mémoire' : 'Enregistrer les mod
                 </div>
             <?php endif; ?>
             <div class="champ champ-large">
-                <label>Parties</label>
+                <label>Pièces</label>
                 <input type="text" name="parties" value="<?= $v('parties') ?>">
             </div>
             <div class="champ">
-                <label>Avocat</label>
+                <label>Déposant</label>
                 <input type="text" name="avocat" value="<?= $v('avocat') ?>">
             </div>
             <div class="champ">
-                <label>Rapporteur</label>
-                <input type="text" name="rapporteur" value="<?= $v('rapporteur') ?>">
+                <label>Juridiction</label>
+                <input type="text" name="juridiction" value="<?= $v('juridiction') ?>">
             </div>
             <div class="champ">
                 <label>Date de dépôt</label>
                 <input type="date" name="date_depot" value="<?= $v('date_depot') ?>">
-            </div>
-            <div class="champ">
-                <label>Date de notification</label>
-                <input type="date" name="date_notification" value="<?= $v('date_notification') ?>">
-            </div>
-            <div class="champ">
-                <label>Transmission au secrétariat</label>
-                <input type="date" name="date_transmission_secretaire" value="<?= $v('date_transmission_secretaire') ?>">
             </div>
             <div class="champ">
                 <label>État</label>

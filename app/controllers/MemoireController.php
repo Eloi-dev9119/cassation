@@ -45,10 +45,10 @@ final class MemoireController
                 ['champ' => 'type_memoire', 'libelle' => 'Type', 'valeurs' => self::libellesMemoire()],
                 ['champ' => 'origine', 'libelle' => 'Origine', 'valeurs' => MemoireModel::ORIGINES],
                 ['champ' => 'num_dossier_PGCS', 'libelle' => 'N° dossier PGCS'],
-                ['champ' => 'parties', 'libelle' => 'Parties'],
-                ['champ' => 'avocat', 'libelle' => 'Avocat'],
+                ['champ' => 'parties', 'libelle' => 'Pièces'],
+                ['champ' => 'avocat', 'libelle' => 'Déposant'],
+                ['champ' => 'juridiction', 'libelle' => 'Juridiction'],
                 ['champ' => 'date_depot', 'libelle' => 'Date de dépôt', 'type' => 'date'],
-                ['champ' => 'rapporteur', 'libelle' => 'Rapporteur'],
                 ['champ' => 'etat', 'libelle' => 'État', 'valeurs' => MemoireModel::ETATS],
             ], $modele->exporter($recherche, $type, $etat));
         }
@@ -188,10 +188,8 @@ final class MemoireController
             'num_dossier_PGCS' => trim((string) entree_post('num_dossier_PGCS', '')),
             'parties'      => trim((string) entree_post('parties', '')),
             'avocat'       => trim((string) entree_post('avocat', '')),
-            'date_notification' => $this->lireDate('date_notification', $erreurs),
+            'juridiction'  => trim((string) entree_post('juridiction', '')),
             'date_depot'        => $this->lireDate('date_depot', $erreurs),
-            'date_transmission_secretaire' => $this->lireDate('date_transmission_secretaire', $erreurs),
-            'rapporteur'   => trim((string) entree_post('rapporteur', '')),
             'observation'  => trim((string) entree_post('observation', '')),
             'etat'         => (string) entree_post('etat', 'depose'),
         ];
@@ -273,9 +271,7 @@ final class MemoireController
     {
         $valeurBrute = entree_post($champ, '');
         $libelles = [
-            'date_notification' => 'date de notification',
             'date_depot' => 'date de dépôt',
-            'date_transmission_secretaire' => 'date de transmission au secrétariat',
         ];
         $libelle = $libelles[$champ] ?? 'date';
 

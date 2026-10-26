@@ -28,6 +28,7 @@ CREATE TABLE IF NOT EXISTS pgcc_reg_memoires (
     num_dossier_PGCS              VARCHAR(100) NOT NULL,
     parties                       VARCHAR(255) NULL,
     avocat                        VARCHAR(200) NULL,
+    juridiction                   VARCHAR(200) NULL,
     date_notification             DATE NULL,
     date_depot                    DATE NULL,
     date_transmission_secretaire  DATE NULL,
@@ -47,6 +48,12 @@ CREATE TABLE IF NOT EXISTS pgcc_reg_memoires (
 ALTER TABLE pgcc_reg_memoires
     ADD COLUMN IF NOT EXISTS id_reg_pourvoi_pen BIGINT NULL,
     ADD COLUMN IF NOT EXISTS id_reg_pourvoi_civ BIGINT NULL;
+
+-- Champ « Juridiction » du registre des mémoires (demande Parquet) ;
+-- les libellés avocat → Déposant et parties → Pièces ne changent pas les
+-- colonnes (voir patch_memoires_juridiction.sql).
+ALTER TABLE pgcc_reg_memoires
+    ADD COLUMN IF NOT EXISTS juridiction VARCHAR(200) NULL AFTER avocat;
 
 -- Le registre du siège est historique ; seule sa colonne de liaison est ajoutée.
 ALTER TABLE siege_cassation_civ

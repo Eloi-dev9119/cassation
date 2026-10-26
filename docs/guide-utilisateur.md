@@ -127,9 +127,18 @@ Le registre centralise les mémoires déposés dans les pourvois.
 - **N° d'ordre** : laissé vide en création, il est **attribué
   automatiquement** (numérotation continue par année). En modification,
   il devient obligatoire.
+- **Pièces** : références des pièces jointes au mémoire.
+- **Déposant** : personne ou cabinet qui dépose le mémoire.
+- **Juridiction** : juridiction d'où provient le dossier.
+- **Date de dépôt**, **État** et **Observation** complètent la fiche.
 - **États** : *Déposé* → *Transmis au rapporteur* → *Rapport établi* →
   *Classé*. Le changement d'état se fait depuis la liste (menu de chaque
   ligne) et demande confirmation.
+
+Les champs *Rapporteur*, *Date de notification* et *Transmission au
+secrétariat* des anciennes fiches ne sont plus saisis : ils restent
+conservés dans l'historique de la base mais n'apparaissent plus dans le
+formulaire, la liste ni l'export.
 
 Depuis la **fiche d'un dossier** pénal ou civil, le lien « Ajouter un
 mémoire » ouvre le formulaire pré-rempli avec le numéro et l'origine du

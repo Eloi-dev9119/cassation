@@ -96,8 +96,8 @@ final class MemoireModel
 
         $recherche = trim($recherche);
         if ($recherche !== '') {
-            $where[] = '(num_dossier_PGCS LIKE :q1 OR parties LIKE :q2 OR avocat LIKE :q3)';
-            $params += ['q1' => "%$recherche%", 'q2' => "%$recherche%", 'q3' => "%$recherche%"];
+            $where[] = '(num_dossier_PGCS LIKE :q1 OR parties LIKE :q2 OR avocat LIKE :q3 OR juridiction LIKE :q4)';
+            $params += ['q1' => "%$recherche%", 'q2' => "%$recherche%", 'q3' => "%$recherche%", 'q4' => "%$recherche%"];
         }
         if ($type !== null && isset(self::TYPES[$type])) {
             $where[]            = 'type_memoire = :type';
@@ -134,8 +134,8 @@ final class MemoireModel
         $params = [];
         $recherche = trim($recherche);
         if ($recherche !== '') {
-            $where[] = '(num_dossier_PGCS LIKE :q1 OR parties LIKE :q2 OR avocat LIKE :q3)';
-            $params += ['q1' => "%$recherche%", 'q2' => "%$recherche%", 'q3' => "%$recherche%"];
+            $where[] = '(num_dossier_PGCS LIKE :q1 OR parties LIKE :q2 OR avocat LIKE :q3 OR juridiction LIKE :q4)';
+            $params += ['q1' => "%$recherche%", 'q2' => "%$recherche%", 'q3' => "%$recherche%", 'q4' => "%$recherche%"];
         }
         if ($type !== null && isset(self::TYPES[$type])) {
             $where[] = 'type_memoire = :type';
@@ -182,14 +182,17 @@ final class MemoireModel
     public function inserer(array $d): int
     {
         $d['cree_par'] = utilisateur_login();
+        // Rapporteur, date de notification et transmission au secrétariat :
+        // retirés du formulaire (demande Parquet), colonnes conservées en
+        // base pour l'historique — de nouvelles lignes les laissent NULL.
         $sql = 'INSERT INTO pgcc_reg_memoires
                     (num_ordre, annee, date_insertion, type_memoire, origine, num_dossier_PGCS,
-                     id_reg_pourvoi_pen, id_reg_pourvoi_civ, parties, avocat, date_notification,
-                     date_depot, date_transmission_secretaire, rapporteur, observation, etat, cree_par)
+                     id_reg_pourvoi_pen, id_reg_pourvoi_civ, parties, avocat, juridiction,
+                     date_depot, observation, etat, cree_par)
                 VALUES
                     (:num_ordre, :annee, :date_insertion, :type_memoire, :origine, :num_dossier_PGCS,
-                     :id_reg_pourvoi_pen, :id_reg_pourvoi_civ, :parties, :avocat, :date_notification,
-                     :date_depot, :date_transmission_secretaire, :rapporteur, :observation, :etat, :cree_par)';
+                     :id_reg_pourvoi_pen, :id_reg_pourvoi_civ, :parties, :avocat, :juridiction,
+                     :date_depot, :observation, :etat, :cree_par)';
         $req = Database::connexion()->prepare($sql);
         $req->execute($d);
         return (int) Database::connexion()->lastInsertId();
