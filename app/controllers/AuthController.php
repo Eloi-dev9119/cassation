@@ -185,7 +185,18 @@ final class AuthController
 
                 $erreurs = $this->validerInscription($donnees);
                 if ($erreurs === []) {
-                    Auth::inscrire($donnees);
+                    try {
+                        Auth::inscrire($donnees);
+                    } catch (Throwable $e) {
+                        // Filet de sécurité : une contrainte UNIQUE non prévue
+                        // (course entre deux demandes simultanées) ne doit pas
+                        // produire une erreur 500.
+                        error_log('[PGCC2] Inscription : ' . $e->getMessage());
+                        $erreurs[] = 'L\'enregistrement a échoué : cette adresse e-mail ou ce matricule '
+                            . 'est déjà utilisé. Vérifiez vos informations puis réessayez.';
+                    }
+                }
+                if ($erreurs === []) {
                     oublier_ancien();
                     flash(
                         'succes',
@@ -225,18 +236,42 @@ final class AuthController
         if ($d['motDePasse'] !== $d['confirmation'])          $erreurs[] = 'Les deux mots de passe ne correspondent pas.';
         if (!ctype_digit($d['matricule']))                    $erreurs[] = 'Le matricule doit être numérique.';
 
-        $req = Database::connexion()->prepare(
+        $db = Database::connexion();
+
+        // Adresse e-mail déjà utilisée : compte actif ou demande existante.
+        // On interroge TOUTE la table pgcc_new_client (et non les seules
+        // demandes Admin_confirm = 0), car la contrainte UNIQUE porte sur
+        // l'ensemble des lignes — sinon l'INSERT échouerait en erreur SQL.
+        $req = $db->prepare(
             'SELECT
                 (SELECT COUNT(*) FROM pgcc_client WHERE login = :login_actif)
                 +
-                (SELECT COUNT(*) FROM pgcc_new_client WHERE login = :login_en_attente AND Admin_confirm = 0)'
+                (SELECT COUNT(*) FROM pgcc_new_client WHERE login = :login_attente)'
         );
         $req->execute([
-            'login_actif' => $d['email'],
-            'login_en_attente' => $d['email'],
+            'login_actif'   => $d['email'],
+            'login_attente' => $d['email'],
         ]);
         if ((int) $req->fetchColumn() > 0) {
-            $erreurs[] = 'Cette adresse e-mail possède déjà un compte ou une demande en attente.';
+            $erreurs[] = 'Cette adresse e-mail possède déjà un compte ou une demande enregistrée.';
+        }
+
+        // Matricule (IM) déjà utilisé : la contrainte UNIQUE des deux tables
+        // provoquerait une erreur SQL ; on la prévient par une validation.
+        if (ctype_digit($d['matricule'])) {
+            $req = $db->prepare(
+                'SELECT
+                    (SELECT COUNT(*) FROM pgcc_client WHERE IM = :im_actif)
+                    +
+                    (SELECT COUNT(*) FROM pgcc_new_client WHERE IM = :im_attente)'
+            );
+            $req->execute([
+                'im_actif'   => (int) $d['matricule'],
+                'im_attente' => (int) $d['matricule'],
+            ]);
+            if ((int) $req->fetchColumn() > 0) {
+                $erreurs[] = 'Ce matricule (IM) est déjà utilisé par un compte ou une demande.';
+            }
         }
 
         return $erreurs;

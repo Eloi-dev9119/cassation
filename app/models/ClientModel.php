@@ -144,8 +144,15 @@ final class ClientModel
                 $db->commit();
                 return true;
             } catch (Throwable $e) {
-                $db->rollBack();
-                throw $e;
+                if ($db->inTransaction()) {
+                    $db->rollBack();
+                }
+                // Collision de contrainte UNIQUE (matricule ou identifiant
+                // déjà pris par un autre compte) : on refuse proprement
+                // plutôt que de produire une erreur 500. La demande reste
+                // en attente, Admin_confirm n'ayant pas été validé.
+                error_log('[PGCC2] Validation de compte : ' . $e->getMessage());
+                return false;
             }
         }
 

@@ -129,6 +129,30 @@ final class SuiviModel
     }
 
     /**
+     * Un suivi portant déjà ce numéro de dossier existe-t-il ?
+     *
+     * La colonne num_dossier_PGCS porte une contrainte UNIQUE : la
+     * vérifier évite une erreur SQL (HTTP 500) à la création comme à la
+     * modification.
+     */
+    public function numeroExiste(string $type, string $numero, ?int $idExclu = null): bool
+    {
+        $def = self::definition($type);
+        if ($def === null || trim($numero) === '') {
+            return false;
+        }
+        $sql = 'SELECT COUNT(*) FROM ' . nom_sql($def['table']) . ' WHERE num_dossier_PGCS = :n';
+        $parametres = ['n' => $numero];
+        if ($idExclu !== null) {
+            $sql .= ' AND ' . nom_sql($def['cle']) . ' <> :id';
+            $parametres['id'] = $idExclu;
+        }
+        $req = Database::connexion()->prepare($sql);
+        $req->execute($parametres);
+        return (int) $req->fetchColumn() > 0;
+    }
+
+    /**
      * Enregistre un nouveau suivi à partir des données validées.
      * `annee` et `date_insertion` sont ajoutées ici (champs techniques).
      */

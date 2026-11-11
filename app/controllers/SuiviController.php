@@ -68,7 +68,24 @@ final class SuiviController
             }
             [$donnees, $erreurs] = (new SuiviModel())->lireFormulaire($type);
             if ($erreurs === []) {
-                (new SuiviModel())->inserer($type, $donnees);
+                $modeleSuivi = new SuiviModel();
+                if ($modeleSuivi->numeroExiste($type, (string) $donnees['num_dossier_PGCS'])) {
+                    $erreurs[] = 'Un suivi avec ce numéro de dossier existe déjà.';
+                }
+            }
+            if ($erreurs === []) {
+                try {
+                    (new SuiviModel())->inserer($type, $donnees);
+                } catch (PDOException $e) {
+                    if ($e->getCode() === '23000') {
+                        error_log('[PGCC2] Suivi ' . $type . ' : ' . $e->getMessage());
+                        $erreurs[] = 'Un suivi avec ce numéro de dossier existe déjà.';
+                    } else {
+                        throw $e;
+                    }
+                }
+            }
+            if ($erreurs === []) {
                 flash('succes', 'Le suivi n° ' . $donnees['num_ordre'] . '/' . $donnees['annee'] . ' a été enregistré.');
                 rediriger('/suivis/' . $type);
             }
@@ -106,7 +123,23 @@ final class SuiviController
             }
             [$donnees, $erreurs] = $modele->lireFormulaire($type);
             if ($erreurs === []) {
-                $modele->modifier($type, $id, $donnees);
+                if ($modele->numeroExiste($type, (string) $donnees['num_dossier_PGCS'], $id)) {
+                    $erreurs[] = 'Un autre suivi porte déjà ce numéro de dossier.';
+                }
+            }
+            if ($erreurs === []) {
+                try {
+                    $modele->modifier($type, $id, $donnees);
+                } catch (PDOException $e) {
+                    if ($e->getCode() === '23000') {
+                        error_log('[PGCC2] Suivi ' . $type . ' (modification) : ' . $e->getMessage());
+                        $erreurs[] = 'Un autre suivi porte déjà ce numéro de dossier.';
+                    } else {
+                        throw $e;
+                    }
+                }
+            }
+            if ($erreurs === []) {
                 flash('succes', 'Le suivi n° ' . $donnees['num_ordre'] . '/' . $donnees['annee'] . ' a été mis à jour.');
                 rediriger('/suivis/' . $type);
             }

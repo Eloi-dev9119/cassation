@@ -115,6 +115,45 @@ final class RegistreModel
     // ------------------------------------------------------------------ //
 
     /**
+     * Vérifie les contraintes d'unicité déclarées du registre
+     * (« unicite » dans la définition) pour prévenir une erreur SQL.
+     *
+     * @param array    $donnees colonne => valeur issue du formulaire
+     * @param int|null $idExclu identifiant à exclure (cas d'une modification)
+     * @return string[]|null colonnes en conflit, ou null si aucune
+     */
+    public function doublonUnicite(array $donnees, ?int $idExclu = null): ?array
+    {
+        $unicite = $this->definition['unicite'] ?? [];
+        if ($unicite === []) {
+            return null;
+        }
+
+        $conditions = [];
+        $parametres = [];
+        foreach ($unicite as $colonne) {
+            // Valeur absente ou NULL : un index UNIQUE autorise plusieurs
+            // NULL, aucun conflit possible.
+            if (!array_key_exists($colonne, $donnees) || $donnees[$colonne] === null) {
+                return null;
+            }
+            $conditions[] = nom_sql($colonne) . ' = :u_' . $colonne;
+            $parametres['u_' . $colonne] = $donnees[$colonne];
+        }
+
+        $sql = 'SELECT COUNT(*) FROM ' . nom_sql($this->definition['table'])
+             . ' WHERE ' . implode(' AND ', $conditions);
+        if ($idExclu !== null) {
+            $sql .= ' AND ' . nom_sql($this->definition['cle']) . ' <> :u_id';
+            $parametres['u_id'] = $idExclu;
+        }
+        $req = Database::connexion()->prepare($sql);
+        $req->execute($parametres);
+
+        return (int) $req->fetchColumn() > 0 ? $unicite : null;
+    }
+
+    /**
      * Insère un nouveau dossier à partir des données du formulaire.
      * La date de création est posée par la base (DEFAULT CURRENT_TIMESTAMP).
      * @param array $donnees colonne => valeur (déjà typées par le contrôleur)

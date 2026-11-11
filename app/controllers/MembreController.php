@@ -111,7 +111,7 @@ final class MembreController
                     flash('succes', 'Le compte a été validé. Le membre peut désormais se connecter. '
                         . Mailer::notifierValidationCompte($membre));
                 } else {
-                    flash('erreur', 'Impossible de valider ce compte. Il a peut-être déjà été traité.');
+                    flash('erreur', 'Impossible de valider ce compte : il a peut-être déjà été traité, ou son matricule (IM) / identifiant est déjà utilisé par un autre compte.');
                 }
                 break;
 

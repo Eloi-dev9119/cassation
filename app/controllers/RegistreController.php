@@ -170,32 +170,64 @@ final class RegistreController
             }
 
             if ($erreurs === []) {
-                if ($dossier === null) {
-                    $idNouveau = $modele->inserer($donnees);
-
-                    // Liaison différée : rattache automatiquement les
-                    // mémoires restés sans dossier source portant ce numéro.
-                    $origineMemoire = match ($definition['table']) {
-                        'pgcc_reg_pourvoi_pen' => 'penal',
-                        'pgcc_reg_pourvoi_civ' => 'civil',
-                        default => null,
-                    };
-                    $nbMemoiresLies = 0;
-                    if ($origineMemoire !== null && isset($donnees['num_dossier_PGCS'])) {
-                        $nbMemoiresLies = (new MemoireModel())->lierDossiersManquants(
-                            $origineMemoire,
-                            (string) $donnees['num_dossier_PGCS'],
-                            $idNouveau
-                        );
-                    }
-                    flash('succes', 'Le dossier a été enregistré dans le registre.'
-                        . ($nbMemoiresLies > 0
-                            ? ' ' . $nbMemoiresLies . ' mémoire(s) du même numéro ont été relié(s) automatiquement.'
-                            : ''));
-                } else {
-                    $modele->modifier($id, $donnees);
-                    flash('succes', 'Le dossier a été mis à jour.');
+                // Unicité déclarative : la clé métier du registre (par
+                // exemple num_dossier_PGCS) porte une contrainte UNIQUE en
+                // base. On la vérifie en amont pour afficher un message
+                // lisible au lieu d'une erreur SQL (HTTP 500).
+                $conflit = $modele->doublonUnicite($donnees, $dossier !== null ? $id : null);
+                if ($conflit !== null) {
+                    $libelles = array_map(
+                        fn (string $colonne): string => registre_libelle_colonne($definition, $colonne),
+                        $conflit
+                    );
+                    $erreurs[] = 'Un dossier avec le même '
+                        . implode(' et ', $libelles)
+                        . ' existe déjà dans ce registre.';
                 }
+            }
+
+            if ($erreurs === []) {
+                try {
+                    if ($dossier === null) {
+                        $idNouveau = $modele->inserer($donnees);
+
+                        // Liaison différée : rattache automatiquement les
+                        // mémoires restés sans dossier source portant ce numéro.
+                        $origineMemoire = match ($definition['table']) {
+                            'pgcc_reg_pourvoi_pen' => 'penal',
+                            'pgcc_reg_pourvoi_civ' => 'civil',
+                            default => null,
+                        };
+                        $nbMemoiresLies = 0;
+                        if ($origineMemoire !== null && isset($donnees['num_dossier_PGCS'])) {
+                            $nbMemoiresLies = (new MemoireModel())->lierDossiersManquants(
+                                $origineMemoire,
+                                (string) $donnees['num_dossier_PGCS'],
+                                $idNouveau
+                            );
+                        }
+                        flash('succes', 'Le dossier a été enregistré dans le registre.'
+                            . ($nbMemoiresLies > 0
+                                ? ' ' . $nbMemoiresLies . ' mémoire(s) du même numéro ont été relié(s) automatiquement.'
+                                : ''));
+                    } else {
+                        $modele->modifier($id, $donnees);
+                        flash('succes', 'Le dossier a été mis à jour.');
+                    }
+                } catch (PDOException $e) {
+                    // Filet de sécurité : une violation d'unicité non prévue
+                    // (course entre deux saisies simultanées) ne doit pas
+                    // produire une erreur 500.
+                    if ($e->getCode() === '23000') {
+                        error_log('[PGCC2] Registre ' . $definition['table'] . ' : ' . $e->getMessage());
+                        $erreurs[] = 'Un dossier portant déjà ce numéro existe dans ce registre.';
+                    } else {
+                        throw $e;
+                    }
+                }
+            }
+
+            if ($erreurs === []) {
                 rediriger('/registres/' . array_key_first(array_filter(
                     registres_definitions(),
                     fn ($d) => $d['table'] === $definition['table']

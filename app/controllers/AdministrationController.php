@@ -107,9 +107,17 @@ final class AdministrationController
             $donnees = $this->donneesFormulaire();
             $erreurs = $this->valider($donnees, true);
             if ($erreurs === []) {
-                $modele->creer($donnees);
-                flash('succes', 'Le compte de ' . $donnees['prenom'] . ' ' . $donnees['nom'] . ' a été créé.');
-                rediriger('/administration/comptes');
+                try {
+                    $modele->creer($donnees);
+                } catch (Throwable $e) {
+                    error_log('[PGCC2] Création compte : ' . $e->getMessage());
+                    $erreurs[] = 'La création du compte a échoué : cette adresse e-mail ou ce matricule '
+                        . 'est déjà utilisé.';
+                }
+                if ($erreurs === []) {
+                    flash('succes', 'Le compte de ' . $donnees['prenom'] . ' ' . $donnees['nom'] . ' a été créé.');
+                    rediriger('/administration/comptes');
+                }
             }
 
             View::afficher('administration/formulaire.php', [
@@ -153,9 +161,17 @@ final class AdministrationController
             $donnees = $this->donneesFormulaire();
             $erreurs = $this->valider($donnees, false, $id);
             if ($erreurs === []) {
-                $modele->modifier($id, $donnees);
-                flash('succes', 'Le compte a été mis à jour.');
-                rediriger('/administration/comptes');
+                try {
+                    $modele->modifier($id, $donnees);
+                } catch (Throwable $e) {
+                    error_log('[PGCC2] Modification compte : ' . $e->getMessage());
+                    $erreurs[] = 'La mise à jour a échoué : cette adresse e-mail ou ce matricule '
+                        . 'est déjà utilisé par un autre compte.';
+                }
+                if ($erreurs === []) {
+                    flash('succes', 'Le compte a été mis à jour.');
+                    rediriger('/administration/comptes');
+                }
             }
 
             View::afficher('administration/formulaire.php', [
@@ -306,6 +322,8 @@ final class AdministrationController
         }
         if (!ctype_digit($donnees['IM'])) {
             $erreurs[] = 'Le matricule doit être numérique.';
+        } elseif ((new AdministrationModel())->imExiste($donnees['IM'], $id)) {
+            $erreurs[] = 'Ce matricule (IM) est déjà utilisé par un compte ou une demande.';
         }
         if (!ctype_digit($donnees['num_bureau'])) {
             $erreurs[] = 'Le numéro de bureau doit être numérique.';

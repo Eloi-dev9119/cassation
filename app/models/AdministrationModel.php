@@ -114,6 +114,32 @@ final class AdministrationModel
     }
 
     /**
+     * Un matricule (IM) existe-t-il déjà (comptes ou demandes) ?
+     * Les deux tables portent une contrainte UNIQUE sur IM : la vérifier
+     * évite une erreur SQL lors de la création ou de la modification.
+     */
+    public function imExiste(string $im, ?int $idExclu = null): bool
+    {
+        $db = Database::connexion();
+
+        $sql = 'SELECT COUNT(*) FROM pgcc_client WHERE IM = :im';
+        $parametres = ['im' => (int) $im];
+        if ($idExclu !== null) {
+            $sql .= ' AND id_client <> :id';
+            $parametres['id'] = $idExclu;
+        }
+        $req = $db->prepare($sql);
+        $req->execute($parametres);
+        if ((int) $req->fetchColumn() > 0) {
+            return true;
+        }
+
+        $req = $db->prepare('SELECT COUNT(*) FROM pgcc_new_client WHERE IM = :im');
+        $req->execute(['im' => (int) $im]);
+        return (int) $req->fetchColumn() > 0;
+    }
+
+    /**
      * Crée un compte actif et retourne son identifiant.
      */
     public function creer(array $donnees): int

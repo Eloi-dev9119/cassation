@@ -22,6 +22,8 @@ function registres_definitions(): array
             'libelleCourt' => 'Arrivées',
             'table'        => 'pgcc_reg_arrivee_pen',
             'cle'          => 'id_reg_arrivee',
+            // Clé métier soumise à une contrainte UNIQUE en base (couple).
+            'unicite'      => ['num_dossier_et_pers_concernee', 'num_dossier_PGCS'],
             'ordre'        => 'annee DESC, num_ordre DESC',
             'recherche'    => ['num_dossier_PGCS', 'juridiction', 'bordereaux_arrivee', 'num_dossier_et_pers_concernee'],
             'conclusion'   => null,
@@ -55,6 +57,7 @@ function registres_definitions(): array
             'libelleCourt' => 'Pénaux',
             'table'        => 'pgcc_reg_pourvoi_pen',
             'cle'          => 'id_reg_pourvoi',
+            'unicite'      => ['num_dossier_PGCS'],
             'ordre'        => 'annee DESC, num_ordre DESC',
             'recherche'    => ['num_dossier_PGCS', 'cassationnaire', 'juridiction', 'inculpation', 'arret_attaque'],
             'conclusion'   => 'conclusion',
@@ -115,6 +118,7 @@ function registres_definitions(): array
             'libelleCourt' => 'Civils',
             'table'        => 'pgcc_reg_pourvoi_civ',
             'cle'          => 'id_reg_pourvoi',
+            'unicite'      => ['num_dossier_PGCS'],
             'ordre'        => 'annee DESC, num_ordre DESC',
             'recherche'    => ['num_dossier_PGCS', 'cassationnaire', 'arret_attaque_et_date'],
             'conclusion'   => 'conclusion',
@@ -165,6 +169,7 @@ function registres_definitions(): array
             'libelleCourt' => 'Déssaisissements',
             'table'        => 'pgcc_reg_des',
             'cle'          => 'id_reg_des',
+            'unicite'      => ['num_dossier_PGCS'],
             'ordre'        => 'annee DESC, num_ordre DESC',
             'recherche'    => ['num_dossier_PGCS', 'cassationnaire', 'inculpation', 'arret_attaque'],
             'conclusion'   => 'conclusion',
@@ -274,6 +279,7 @@ function registres_definitions(): array
             'libelleCourt' => 'PIL',
             'table'        => 'pgcc_reg_pil',
             'cle'          => 'id_pil',
+            'unicite'      => ['num_pil'],
             'ordre'        => 'annee DESC, num_ordre DESC',
             'recherche'    => ['num_pil', 'requete', 'magistrat_instructeur', 'lettre_GSMJ'],
             'conclusion'   => null,
@@ -330,6 +336,20 @@ function registre_colonnes(array $definition, string $usage): array
         $definition['colonnes'],
         fn (array $c) => !empty($c[$usage])
     ));
+}
+
+/**
+ * Libellé lisible d'une colonne du registre (repli sur le nom technique
+ * si la colonne n'est pas décrite dans la définition).
+ */
+function registre_libelle_colonne(array $definition, string $nom): string
+{
+    foreach ($definition['colonnes'] as $colonne) {
+        if (($colonne['nom'] ?? null) === $nom) {
+            return (string) $colonne['libelle'];
+        }
+    }
+    return $nom;
 }
 
 /**
