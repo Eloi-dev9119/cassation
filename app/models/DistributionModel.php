@@ -85,14 +85,16 @@ final class DistributionModel
     public function dossiersNonDistribues(string $type = 'pen', string $recherche = ''): array
     {
         $table = $type === 'civ' ? 'pgcc_reg_pourvoi_civ' : 'pgcc_reg_pourvoi_pen';
-        $typeNormalise = $type === 'civ' ? 'civ' : 'pen';
         $bdd    = Database::connexion();
-        $params = ['type' => $typeNormalise];
+        $params = [];
 
+        // La contrainte UNIQUE de pgcc_distribution_pg porte sur le seul
+        // num_dossier_PGCS : un dossier déjà distribué (quel que soit son
+        // type) ne peut donc plus être proposé — le filtre par type serait
+        // trompeur et laisserait apparaître des dossiers non insérables.
         $condition = ' WHERE NOT EXISTS (
                            SELECT 1 FROM pgcc_distribution_pg d
                            WHERE d.num_dossier_PGCS = p.num_dossier_PGCS
-                             AND d.type_dossier = :type
                        )';
         $recherche = trim($recherche);
         if ($recherche !== '') {
@@ -163,7 +165,7 @@ final class DistributionModel
         );
         $dejaDistribue = $bdd->prepare(
             'SELECT 1 FROM pgcc_distribution_pg
-             WHERE num_dossier_PGCS = :numero AND type_dossier = :type LIMIT 1'
+             WHERE num_dossier_PGCS = :numero LIMIT 1'
         );
         $insert = $bdd->prepare(
             'INSERT INTO pgcc_distribution_pg
@@ -183,24 +185,34 @@ final class DistributionModel
                 }
 
                 // Une page restée ouverte ne doit pas attribuer une seconde fois un dossier.
+                // Le contrôle porte sur le seul numéro : c'est lui qui est UNIQUE en base.
                 $dejaDistribue->execute([
                     'numero' => $dossier['num_dossier_PGCS'],
-                    'type'   => $typeNormalise,
                 ]);
                 if ($dejaDistribue->fetchColumn() !== false) {
                     continue;
                 }
 
-                $insert->execute([
-                    'annee'       => $annee,
-                    'nom_liste'   => $nomListe,
-                    'num_dossier' => $dossier['num_dossier_PGCS'],
-                    'type_dossier'=> $typeNormalise,
-                    'parties'     => mb_substr((string) $dossier['cassationnaire'], 0, 255),
-                    'sigle'       => $sigle,
-                    'remise_secr' => $dateRemiseSecretariat ?? '0000-00-00',
-                    'cree_par'    => utilisateur_login(),
-                ]);
+                try {
+                    $insert->execute([
+                        'annee'       => $annee,
+                        'nom_liste'   => $nomListe,
+                        'num_dossier' => $dossier['num_dossier_PGCS'],
+                        'type_dossier'=> $typeNormalise,
+                        'parties'     => mb_substr((string) $dossier['cassationnaire'], 0, 255),
+                        'sigle'       => $sigle,
+                        'remise_secr' => $dateRemiseSecretariat ?? '0000-00-00',
+                        'cree_par'    => utilisateur_login(),
+                    ]);
+                } catch (PDOException $e) {
+                    // Course entre deux listes : le numéro a été distribué
+                    // entre-temps. On ignore cette ligne plutôt que de faire
+                    // échouer toute la liste (erreur 500).
+                    if ($e->getCode() === '23000') {
+                        continue;
+                    }
+                    throw $e;
+                }
                 $ajoutes++;
             }
             $bdd->commit();
