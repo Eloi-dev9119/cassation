@@ -235,3 +235,103 @@
     document.addEventListener("input", effacerErreurPersonnalisee, true);
     document.addEventListener("change", effacerErreurPersonnalisee, true);
 })();
+
+(function () {
+    const toasts = document.querySelectorAll("[data-toast]");
+    if (toasts.length === 0) return;
+
+    toasts.forEach(function (toast) {
+        const close = toast.querySelector("[data-toast-close]");
+        const duration = parseInt(toast.dataset.toastDuration || "6500", 10);
+        let remaining = Number.isFinite(duration) ? duration : 6500;
+        let timer = null;
+        let startedAt = 0;
+        let survol = false;
+        let focus = false;
+
+        function retirer() {
+            if (timer !== null) window.clearTimeout(timer);
+            timer = null;
+            toast.classList.add("notification-sortie");
+            window.setTimeout(function () { toast.remove(); }, 240);
+        }
+
+        function demarrer() {
+            startedAt = Date.now();
+            toast.classList.remove("est-en-pause");
+            timer = window.setTimeout(retirer, remaining);
+        }
+
+        function suspendre() {
+            if (timer === null) return;
+            window.clearTimeout(timer);
+            timer = null;
+            remaining -= Date.now() - startedAt;
+            if (remaining < 0) remaining = 0;
+            toast.classList.add("est-en-pause");
+        }
+
+        function reprendre() {
+            if (survol || focus || timer !== null || remaining <= 0) return;
+            demarrer();
+        }
+
+        if (close) close.addEventListener("click", retirer);
+        toast.addEventListener("mouseenter", function () {
+            survol = true;
+            suspendre();
+        });
+        toast.addEventListener("mouseleave", function () {
+            survol = false;
+            reprendre();
+        });
+        toast.addEventListener("focusin", function () {
+            focus = true;
+            suspendre();
+        });
+        toast.addEventListener("focusout", function (event) {
+            if (!toast.contains(event.relatedTarget)) {
+                focus = false;
+                reprendre();
+            }
+        });
+        demarrer();
+    });
+})();
+
+/* Bascule « Afficher / Masquer » : chaque champ de mot de passe gagne un
+   bouton en forme d'œil permettant de vérifier sa saisie. Un attribut
+   data-bascule-mdp évite d'équiper deux fois le même champ. */
+(function () {
+    const iconeOeil = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const iconeOeilBarre = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"/><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+
+    function installer(champ) {
+        if (champ.dataset.basculeMdp) return;
+        champ.dataset.basculeMdp = "1";
+
+        const enveloppe = document.createElement("span");
+        enveloppe.className = "champ-mdp";
+        champ.parentNode.insertBefore(enveloppe, champ);
+        enveloppe.appendChild(champ);
+
+        const bouton = document.createElement("button");
+        bouton.type = "button";
+        bouton.className = "bascule-mdp";
+        bouton.innerHTML = iconeOeil;
+        bouton.setAttribute("aria-label", "Afficher le mot de passe");
+        bouton.addEventListener("click", function () {
+            const visible = champ.type === "password";
+            champ.type = visible ? "text" : "password";
+            bouton.innerHTML = visible ? iconeOeilBarre : iconeOeil;
+            bouton.setAttribute(
+                "aria-label",
+                visible ? "Masquer le mot de passe" : "Afficher le mot de passe"
+            );
+            champ.focus({ preventScroll: true });
+        });
+        enveloppe.appendChild(bouton);
+    }
+
+    document.querySelectorAll('input[type="password"]').forEach(installer);
+})();

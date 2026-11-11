@@ -19,19 +19,21 @@ $jeton = Auth::jeton();
     </div>
 </div>
 
-<div class="filtres">
+<div class="onglets">
     <?php foreach ($onglets as $code => $libelle): ?>
-        <a class="bouton <?= $filtre === $code ? '' : 'bouton-secondaire' ?>" href="<?= e(url($baseUrl . '?filtre=' . $code)) ?>"><?= e($libelle) ?></a>
+        <a class="bouton <?= $filtre === $code ? '' : 'bouton-secondaire' ?>" href="<?= e(url($baseUrl . '?filtre=' . $code)) ?>"<?= $filtre === $code ? ' aria-current="page"' : '' ?>><?= e($libelle) ?></a>
     <?php endforeach; ?>
     <span class="compte"><?= count($comptes) ?> compte(s)</span>
 </div>
 
-<form class="filtres" method="get" action="<?= e(url($baseUrl)) ?>">
-    <input type="hidden" name="r" value="<?= e($baseUrl) ?>">
-    <input type="hidden" name="filtre" value="<?= e($filtre) ?>">
-    <input type="search" name="q" placeholder="Nom, prénom, e-mail ou sigle…" value="<?= e($recherche) ?>">
-    <button type="submit" class="bouton">Rechercher</button>
-</form>
+<div class="barre-filtres">
+    <form class="filtres" method="get" action="<?= e(url($baseUrl)) ?>" data-auto-filtre role="search">
+        <input type="hidden" name="r" value="<?= e($baseUrl) ?>">
+        <input type="hidden" name="filtre" value="<?= e($filtre) ?>">
+        <input type="search" name="q" placeholder="Nom, prénom, e-mail ou sigle…" value="<?= e($recherche) ?>">
+        <button type="submit" class="bouton">Rechercher</button>
+    </form>
+</div>
 
 <div class="tableau-enveloppe">
     <table class="liste">
@@ -43,7 +45,10 @@ $jeton = Auth::jeton();
         </thead>
         <tbody>
             <?php if ($comptes === []): ?>
-                <tr><td colspan="9" style="text-align:center;color:var(--gris);padding:26px">Aucun compte ne correspond aux critères.</td></tr>
+                <tr><td colspan="9" class="etat-vide">
+                    <strong>Aucun compte trouvé</strong>
+                    Aucun compte ne correspond aux critères de recherche.
+                </td></tr>
             <?php endif; ?>
             <?php foreach ($comptes as $compte): ?>
                 <?php
@@ -53,7 +58,7 @@ $jeton = Auth::jeton();
                 $statut = (string) ($compte['status'] ?? '');
                 ?>
                 <tr>
-                    <td><?= e($compte['nom']) ?></td>
+                    <td><?= e($compte['nom']) ?> <?= badge_presence($presence[$id] ?? null) ?></td>
                     <td><?= e($compte['prenom']) ?></td>
                     <td><?= e($compte['login']) ?></td>
                     <td><?= e(POSTES_UTILISATEUR[$compte['poste']] ?? ($compte['poste'] ?: '—')) ?></td>
@@ -69,7 +74,7 @@ $jeton = Auth::jeton();
                             <span class="badge badge-vert">Actif</span>
                         <?php endif; ?>
                     </td>
-                    <td>
+                    <td class="cellule-actions">
                         <?php if ($valide === 0): ?>
                             <form method="post" action="<?= e(url($baseUrl . '/action')) ?>" style="display:inline"
                                   data-confirm-title="Valider le compte"

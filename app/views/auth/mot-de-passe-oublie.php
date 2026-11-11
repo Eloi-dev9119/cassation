@@ -1,7 +1,6 @@
 <?php /** Réinitialisation de mot de passe par question secrète (parité pwdAG v1). */ ?>
 <div class="boite-auth">
     <h1>Mot de passe oublié</h1>
-    <p class="sous-titre">Répondez à votre question secrète pour définir un nouveau mot de passe.</p>
 
     <?php if ($erreurs !== []): ?>
         <div class="erreur-liste" role="alert" aria-live="assertive">
@@ -21,7 +20,7 @@
                 <label for="email">Adresse e-mail du compte</label>
                 <input type="email" id="email" name="email" required autofocus value="<?= e($email) ?>">
             </div>
-            <button type="submit" class="bouton" style="width:100%">Continuer</button>
+            <button type="submit" class="bouton bouton-bloc">Continuer</button>
         </form>
     <?php else: ?>
         <form method="post" action="<?= e(url('/mot-de-passe-oublie')) ?>"
@@ -47,7 +46,7 @@
                 <label>Confirmation</label>
                 <input type="password" name="confirmation" required>
             </div>
-            <button type="submit" class="bouton bouton-bordeaux" style="width:100%">Réinitialiser le mot de passe</button>
+            <button type="submit" class="bouton bouton-bordeaux bouton-bloc">Réinitialiser le mot de passe</button>
         </form>
     <?php endif; ?>
 

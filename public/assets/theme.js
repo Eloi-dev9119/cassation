@@ -4,7 +4,7 @@
     const stockageTheme = "pgcc-theme";
     const themes = [
         { id: "institutionnel", nom: "Institutionnel" },
-        { id: "sombre", nom: "Sombre" }
+        { id: "sepia", nom: "Neutre chaud" }
     ];
 
     function themeValide(id) {

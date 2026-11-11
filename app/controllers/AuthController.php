@@ -35,11 +35,25 @@ final class AuthController
 
                 if ($email === '' || $motDePasse === '') {
                     $erreur = 'Veuillez renseigner votre e-mail et votre mot de passe.';
-                } elseif (Auth::connecter($email, $motDePasse)) {
-                    flash('succes', 'Connexion réussie. Bienvenue ' . Auth::nomComplet() . '.');
-                    rediriger('/tableau-de-bord');
                 } else {
-                    $erreur = 'Identifiants incorrects, compte non validé ou membre retiré.';
+                    // Limitation des tentatives : blocage temporaire après
+                    // CONNEXION_TENTATIVES_MAX échecs pour cette adresse.
+                    $secondes = self::blocageRestant($email);
+                    if ($secondes > 0) {
+                        $erreur = 'Trop de tentatives infructueuses pour cette adresse : réessayez dans '
+                            . max(1, (int) ceil($secondes / 60) ) . ' minute(s).';
+                    } elseif (Auth::connecter($email, $motDePasse)) {
+                        self::effacerEchecs($email);
+                        flash(
+                            'succes',
+                            'Bienvenue ' . Auth::nomComplet() . '. Votre session est maintenant ouverte.',
+                            'Connexion réussie'
+                        );
+                        rediriger('/tableau-de-bord');
+                    } else {
+                        self::enregistrerEchec($email);
+                        $erreur = 'Identifiants incorrects, compte non validé ou membre retiré.';
+                    }
                 }
             }
         }
@@ -135,7 +149,11 @@ final class AuthController
         Auth::deconnecter();
         Auth::demarrer();
         session_regenerate_id(true);
-        flash('info', 'Vous avez été déconnecté de votre session.');
+        flash(
+            'info',
+            'Votre session a été fermée en toute sécurité. À bientôt.',
+            'Déconnexion'
+        );
         rediriger('/connexion');
     }
 
@@ -169,7 +187,11 @@ final class AuthController
                 if ($erreurs === []) {
                     Auth::inscrire($donnees);
                     oublier_ancien();
-                    flash('succes', 'Votre demande d\'inscription a été enregistrée. Elle sera examinée par l\'administration.');
+                    flash(
+                        'succes',
+                        'Votre demande d\'inscription a été enregistrée. Elle sera examinée par l\'administration.',
+                        'Demande envoyée'
+                    );
                     rediriger('/connexion');
                 }
                 memoriser_ancien(array_diff_key($donnees, ['motDePasse' => '', 'confirmation' => '']));
@@ -218,5 +240,47 @@ final class AuthController
         }
 
         return $erreurs;
+    }
+
+    // ------------------------------------------------------------------ //
+    //  Limitation des tentatives de connexion
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Secondes de blocage restantes pour une adresse (0 = non bloquée).
+     * Le compteur est en session : adapté à l'intranet ; il se réinitialise
+     * à la déconnexion volontaire, mais le blocage par adresse échoue
+     * systématiquement avant d'atteindre le seuil via une seule session.
+     */
+    private static function blocageRestant(string $email): int
+    {
+        $entree = $_SESSION['echecs_connexion'][mb_strtolower($email)] ?? null;
+        if (!is_array($entree) || (int) $entree['nb'] < CONNEXION_TENTATIVES_MAX) {
+            return 0;
+        }
+        $reste = CONNEXION_BLOCAGE_MINUTES * 60 - (time() - (int) $entree['derniere']);
+        return max(0, $reste);
+    }
+
+    /** Enregistre un échec de connexion pour l'adresse donnée. */
+    private static function enregistrerEchec(string $email): void
+    {
+        $cle = mb_strtolower($email);
+        $entree = $_SESSION['echecs_connexion'][$cle] ?? ['nb' => 0, 'derniere' => 0];
+        // Au-delà du seuil déjà atteint, on ne rallonge pas le blocage :
+        // seule une nouvelle tentative effective (post-blocage) compte.
+        if ((int) $entree['nb'] >= CONNEXION_TENTATIVES_MAX
+            && (time() - (int) $entree['derniere']) < CONNEXION_BLOCAGE_MINUTES * 60) {
+            return;
+        }
+        $entree['nb'] = ((int) $entree['nb'] >= CONNEXION_TENTATIVES_MAX) ? 1 : (int) $entree['nb'] + 1;
+        $entree['derniere'] = time();
+        $_SESSION['echecs_connexion'][$cle] = $entree;
+    }
+
+    /** Efface les échecs mémorisés (connexion réussie). */
+    private static function effacerEchecs(string $email): void
+    {
+        unset($_SESSION['echecs_connexion'][mb_strtolower($email)]);
     }
 }

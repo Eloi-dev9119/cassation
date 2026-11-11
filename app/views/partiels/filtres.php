@@ -9,17 +9,19 @@
  */
 $filtresSup = $parametresSup ?? '';
 $routeFiltre = $routeFiltre ?? '';
+$recherche = $recherche ?? '';
+$annee = $annee ?? null;
 ?>
-<form class="filtres" method="get" action="<?= e($actionFiltre) ?>">
+<form class="filtres" method="get" action="<?= e($actionFiltre) ?>" data-auto-filtre role="search">
     <?php if ($routeFiltre !== ''): ?>
         <input type="hidden" name="r" value="<?= e($routeFiltre) ?>">
     <?php endif; ?>
-    <?php foreach (array_filter(array_map('strval', $filtresSup)) as $cle => $val): ?>
-        <input type="hidden" name="<?= e($cle) ?>" value="<?= e($val) ?>">
+    <?php foreach (array_filter(array_map('strval', (array) $filtresSup), static fn (string $v): bool => $v !== '') as $nomSupplement => $valeurSupplement): ?>
+        <input type="hidden" name="<?= e($nomSupplement) ?>" value="<?= e($valeurSupplement) ?>">
     <?php endforeach; ?>
-    <input type="search" name="q" placeholder="Rechercher…" value="<?= e($recherche) ?>">
+    <input type="search" name="q" placeholder="Rechercher…" value="<?= e($recherche) ?>" aria-label="Rechercher">
     <?php if (!empty($annees)): ?>
-        <select name="annee">
+        <select name="annee" aria-label="Filtrer par année">
             <option value="">Toutes les années</option>
             <?php foreach ($annees as $a): ?>
                 <option value="<?= (int) $a ?>" <?= (string) $annee === (string) $a ? 'selected' : '' ?>><?= (int) $a ?></option>

@@ -44,6 +44,10 @@ Bon à savoir :
   il suffit de se reconnecter.
 - Les actions sensibles (suppression, archivage, déconnexion…)
   demandent toujours une **confirmation** avant de s'exécuter.
+- Après un enregistrement, une **notification de confirmation** apparaît
+  en haut à droite et disparaît automatiquement après quelques secondes.
+- Les consignes détaillées sont regroupées dans la page **Aide** ;
+  les champs obligatoires sont signalés par un astérisque rouge.
 
 ### Mot de passe oublié
 
@@ -61,15 +65,28 @@ l'administration (voir §9) : elle peut réinitialiser votre mot de passe.
 3. La demande est enregistrée **en attente de validation** : un membre
    de l'administration (PG ou SG) la valide depuis Administration >
    Comptes utilisateurs (ou depuis Membres).
-   Vous recevrez votre accès une fois la demande acceptée.
+   Une fois la demande acceptée, un e-mail de confirmation est envoyé à
+   l'adresse indiquée ; vous pouvez alors vous connecter avec le mot de
+   passe choisi à l'inscription.
 
 ## 2. Tableau de bord
 
-La page d'accueil après connexion affiche :
+La page d'accueil après connexion rassemble la recherche, les chiffres
+clés et tous les modules :
 
+- une **recherche globale** : un seul terme (au moins 2 caractères) est
+  cherché dans les six registres et dans les mémoires. Les résultats
+  sont groupés par registre, avec le total de correspondances et un lien
+  direct vers chaque fiche ;
+- un bloc **Accès aux modules** toujours visible, sans menu à dérouler :
+  registres (avec leur volume), suivis 321 et 107, synthèse des suivis,
+  répartition et distributions ;
 - des **compteurs** : dossiers par registre (arrivées, pénaux, civils,
-  dessaisissements, mémoires), nombre de détenus, membres actifs,
-  demandes d'inscription en attente ;
+  dessaisissements, siège, PIL, mémoires), dossiers en détention,
+  membres actifs et demandes d'inscription en attente ;
+- les **conclusions à traiter** par registre : à rédiger et à
+  transmettre pour frappe au secrétariat ;
+- les **six derniers dossiers modifiés**, tous registres confondus ;
 - un **graphique** du volume de dossiers par année sur les huit
   dernières années (chaque barre indique son total au survol).
 
@@ -78,15 +95,16 @@ Parquet avant d'entrer dans un registre.
 
 ## 3. Registres
 
-Le menu **Registres** regroupe les cinq registres :
+Le menu **Registres** regroupe les six registres :
 
 | Registre | Contenu |
 |---|---|
-| **Arrivés** | Réception des dossiers pénaux au Parquet (bordereaux, juridiction, détention) |
+| **Arrivées** | Réception des dossiers pénaux au Parquet (bordereaux, juridiction, détention) |
 | **Pénaux** | Pourvois pénaux : parties, mémoires, audience, arrêt, conclusion |
 | **Civils** | Pourvois civils : bordereau d'envoi, mémoires, distribution, arrêt, conclusion |
-| **Déssaisissements** | Dossiers déssaisis transmis au siège |
+| **Dessaisissements** | Demandes de dessaisissement et suites données |
 | **Siège (Cassation civile)** | Suivi des dossiers civils côté siège, reliés à un dossier civil du registre |
+| **PIL** | Pourvois dans l'intérêt de la loi : lettre du ministère, magistrat instructeur, requête, audience, arrêt |
 
 Chaque registre fonctionne de la même façon :
 
@@ -265,9 +283,10 @@ Trois onglets restent disponibles depuis **Membres** :
 
 - **En attente de validation** : demandes d'inscription (table
   `pgcc_new_client`) et anciens comptes jamais validés.
-  - *Valider* : le compte devient actif et peut se connecter. Si un
-    compte actif existait déjà avec le même e-mail, il est réactivé et
-    **le mot de passe choisi à l'inscription est appliqué**.
+  - *Valider* : le compte devient actif, un e-mail de confirmation est
+    envoyé au membre et il peut se connecter. Si un compte actif existait
+    déjà avec le même e-mail, il est réactivé et **le mot de passe choisi
+    à l'inscription est appliqué**.
 - **Membres actifs** :
   - *Mettre à la retraite* : le membre ne peut plus se connecter ; ses
     données sont conservées.
@@ -307,6 +326,14 @@ Excel (séparateur `;`, accents préservés). L'export respecte **les
 filtres et la recherche en cours** — pour exporter tout, videz d'abord
 la recherche. Sont exportables : les registres, les mémoires, les
 suivis, les distributions, la répartition et les synthèses par AG.
+
+### Export PDF
+
+Le bouton **« Télécharger PDF »** produit un document A4 prêt à imprimer.
+Il reprend le tableau affiché, en abrégeant les textes longs (conclusions,
+dispositifs) pour rester lisible. L'export est plafonné aux **1 000
+premières lignes** et le document le signale en bas de page : pour obtenir
+la totalité des données, utilisez l'export CSV.
 
 ### Impression
 

@@ -155,10 +155,11 @@ function oublier_ancien(): void
 
 /**
  * Enregistre un message flash affiché une seule fois à la prochaine page.
+ * Le titre optionnel personnalise la notification de confirmation.
  */
-function flash(string $type, string $message): void
+function flash(string $type, string $message, ?string $titre = null): void
 {
-    $_SESSION['flash'] = ['type' => $type, 'message' => $message];
+    $_SESSION['flash'] = ['type' => $type, 'message' => $message, 'titre' => $titre];
 }
 
 /**
@@ -172,6 +173,52 @@ function recuperer_flash(): ?array
     $flash = $_SESSION['flash'];
     unset($_SESSION['flash']);
     return $flash;
+}
+
+/**
+ * Pastille de présence d'un utilisateur : verte « En ligne » si sa dernière
+ * activité date de moins de PRESENCE_DUREE secondes, grise avec le dernier
+ * passage connu sinon.
+ *
+ * @param string|null $derniereActivite « AAAA-MM-JJ HH:MM:SS », null si
+ *                                      aucune activité enregistrée.
+ */
+function badge_presence(?string $derniereActivite): string
+{
+    $ts = $derniereActivite === null ? false : strtotime($derniereActivite);
+    $enLigne = $ts !== false && (time() - $ts) <= PRESENCE_DUREE;
+    $libelle = $enLigne
+        ? 'En ligne'
+        : ($ts !== false
+            ? 'Vu le ' . date_fr($derniereActivite) . ' à ' . date('H:i', $ts)
+            : 'Hors ligne');
+    return '<span class="pastille-presence ' . ($enLigne ? 'en-ligne' : 'hors-ligne') . '">'
+        . '<span class="pastille-point" aria-hidden="true"></span>'
+        . e($libelle) . '</span>';
+}
+
+/**
+ * Rendu sûr d'une conclusion stockée au format HTML (souvent collée depuis
+ * Word) : extrait le contenu du <body> s'il existe, supprime les blocs
+ * actifs (script, style, iframe…) et les gestionnaires d'événements, puis
+ * retourne le HTML interne prêt à être affiché tel quel.
+ */
+function rendre_conclusion(string $html): string
+{
+    if (preg_match('/<body[^>]*>(.*)<\/body>/is', $html, $m) === 1) {
+        $html = $m[1];
+    }
+    // Blocs conditionnels Word : <!--[if gte mso 9]><xml>…<![endif]--> —
+    // ils contiennent les définitions WordDocument/LatentStyles visibles
+    // comme du texte si on les laisse passer.
+    $html = preg_replace('/<!--\[if[^\]]*\]>[\s\S]*?<!\[endif\]-->/i', '', $html) ?? $html;
+    // Commentaires HTML restants.
+    $html = preg_replace('/<!--[\s\S]*?-->/i', '', $html) ?? $html;
+    $html = preg_replace('/<(script|style|head|meta|title|link|object|embed|iframe)\b[^>]*>.*?<\/\1>/is', '', $html) ?? $html;
+    $html = preg_replace('/<(script|style|head|meta|title|link|object|embed|iframe)\b[^>]*\/?>/is', '', $html) ?? $html;
+    $html = preg_replace('/\son\w+\s*=\s*("[^"]*"|\'[^\']*\'|[^\s>]+)/is', '', $html) ?? $html;
+    $html = preg_replace('/(href|src)\s*=\s*("|\')\s*javascript:[^"\']*\2/is', '$1="#"', $html) ?? $html;
+    return trim($html);
 }
 
 /**

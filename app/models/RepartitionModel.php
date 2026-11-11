@@ -31,22 +31,32 @@ final class RepartitionModel
             'SELECT DISTINCT sigle FROM pgcc_distribution_pg WHERE sigle <> "" ORDER BY sigle ASC'
         )->fetchAll(PDO::FETCH_COLUMN);
 
-        $reqPen = $bdd->prepare(
-            'SELECT COUNT(*) FROM pgcc_distribution_pg
-             WHERE nom_liste LIKE :mois AND annee = :annee AND sigle = :sigle AND type_dossier = "pen"'
+        // Une seule requête groupée remplace les 2 × N comptages unitaires
+        // (un par sigle) qui rendaient la page lente : un scan unique de la
+        // table suffit, puis on complète les AG sans distribution avec 0.
+        $req = $bdd->prepare(
+            'SELECT sigle,
+                    SUM(type_dossier = "pen") AS penaux,
+                    SUM(type_dossier = "civ") AS civils
+             FROM pgcc_distribution_pg
+             WHERE nom_liste LIKE :mois AND annee = :annee AND sigle <> ""
+             GROUP BY sigle'
         );
-        $reqCiv = $bdd->prepare(
-            'SELECT COUNT(*) FROM pgcc_distribution_pg
-             WHERE nom_liste LIKE :mois AND annee = :annee AND sigle = :sigle AND type_dossier = "civ"'
-        );
+        $req->execute(['mois' => "%$mois%", 'annee' => $annee]);
+
+        $compteurs = [];
+        foreach ($req->fetchAll() as $ligne) {
+            $compteurs[(string) $ligne['sigle']] = [
+                'penaux' => (int) $ligne['penaux'],
+                'civils' => (int) $ligne['civils'],
+            ];
+        }
 
         $penaux = [];
         $civils = [];
         foreach ($ags as $sigle) {
-            $reqPen->execute(['mois' => "%$mois%", 'annee' => $annee, 'sigle' => $sigle]);
-            $penaux[] = (int) $reqPen->fetchColumn();
-            $reqCiv->execute(['mois' => "%$mois%", 'annee' => $annee, 'sigle' => $sigle]);
-            $civils[] = (int) $reqCiv->fetchColumn();
+            $penaux[] = $compteurs[$sigle]['penaux'] ?? 0;
+            $civils[] = $compteurs[$sigle]['civils'] ?? 0;
         }
 
         return ['ags' => $ags, 'penaux' => $penaux, 'civils' => $civils];

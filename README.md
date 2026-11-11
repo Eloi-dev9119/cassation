@@ -4,6 +4,19 @@ Application PHP 8 de gestion des registres et du suivi des dossiers du Parquet G
 
 > **Guide utilisateur** : [`docs/guide-utilisateur.md`](docs/guide-utilisateur.md) — mode d'emploi complet pour les membres du Parquet (connexion, registres, mémoires, distributions, administration). Un condensé est intégré dans l'application, page **Aide** du menu principal.
 
+## Fonctionnalités
+
+- **Six registres** gérés de façon déclarative dans `app/models/Registres.php` : Registres Arrivés, Registres Pénaux, Registres Civils, Registres Désaisissements, Registre du Siège (Cassation civile) et Registre PIL (intérêt de la loi) — listes, recherche, formulaires et fiches détaillées générés à partir des définitions, sans duplication de code.
+- **Mémoires** (ampliatif et en défense) rattachés aux dossiers de pourvoi.
+- **Recherche globale** depuis le tableau de bord : un seul terme interrogé dans les six registres et les mémoires, résultats groupés par registre avec liens directs vers les fiches.
+- **Suivi « § 321 »** des dossiers (`SuiviModel`, `SuiviDossierModel`) : suivi de l'état d'avancement des dossiers.
+- **Distributions** : répartition des dossiers et synthèse par Avocat Général.
+- **Tableau de bord** : statistiques d'activité (`app/models/StatsModel.php`), compteurs de conclusions à rédiger / à transmettre pour frappe, derniers dossiers modifiés et **accès aux modules toujours visibles** (registres, suivis, synthèse des suivis, répartition, distributions).
+- **Administration** : gestion des comptes utilisateurs, validation des inscriptions et journal d'activité, réservée aux postes **PG** et **SG**.
+- **Exports CSV et PDF** des listes et rapports (tenant compte des filtres actifs) et impression des listes, rapports et fiches depuis le navigateur. Le PDF, document de consultation, est limité aux 1 000 premières lignes ; le CSV fournit l'export complet.
+- **Sauvegardes automatiques** de la base (dump horodaté, rotation, journal, tâche planifiée Windows).
+- **E-mails** de confirmation d'inscription via SMTP (désactivé par défaut, configuration ci-dessous).
+
 ## Démarrage local
 
 1. Démarrer Apache et MySQL dans XAMPP.
@@ -11,6 +24,26 @@ Application PHP 8 de gestion des registres et du suivi des dossiers du Parquet G
 3. Ouvrir <http://localhost/pgcc2/>.
 
 Le projet garde `index.php` à sa racine pour conserver cette URL historique. Les sources internes sont rangées sous `app/` et protégées des requêtes HTTP par `.htaccess`. Les ressources publiques se trouvent sous `public/assets/`.
+
+L'URL `http://localhost/pgcc2/` est servie par une **jonction** : `C:\xampp\htdocs\pgcc2` pointe directement vers le dossier du projet, sans copie de fichiers. Le script `tools/deployer-site.bat` contrôle cette jonction (et la recrée avec `tools\deployer-site.bat reparer` si elle a été supprimée ou détournée). Aucune synchronisation de fichiers n'est donc nécessaire pour publier le site local.
+
+## Configuration e-mail
+
+L'envoi d'e-mails est désactivé par défaut. Sous XAMPP, le plus simple est de copier `config/mail.local.php.example` en `config/mail.local.php` puis d'y renseigner les valeurs ci-dessous. Ce fichier local est protégé par `.htaccess`. Les variables d'environnement restent prioritaires si elles sont définies :
+
+- `PGCC_MAIL_ACTIF=true`
+- `PGCC_MAIL_HOST=smtp.exemple.mg`
+- `PGCC_MAIL_PORT=587` (`0` choisit automatiquement 587 en TLS, 465 en SSL et 25 sans chiffrement)
+- `PGCC_MAIL_SECURITE=tls` (`tls`, `ssl` ou `none`)
+- `PGCC_MAIL_USER=...`
+- `PGCC_MAIL_PASSWORD=...`
+- `PGCC_MAIL_FROM=no-reply@exemple.mg`
+- `PGCC_MAIL_FROM_NAME=PGCC - Parquet Général`
+- `PGCC_MAIL_VERIFY_CERT=true`
+
+Tester la configuration : `php tools/maintenance/tester_email.php destinataire@example.com`.
+
+Après validation d'une inscription, un e-mail de confirmation est envoyé au membre. Si l'envoi échoue, le compte reste validé et l'administrateur reçoit un avertissement.
 
 ## Organisation du projet
 
@@ -25,32 +58,50 @@ Le projet garde `index.php` à sa racine pour conserver cette URL historique. Le
 │   └── app.php             Configuration de l’application et de la base
 ├── database/
 │   ├── migrations/         Schéma et évolutions SQL
-│   └── backups/            Export historique des tables d’audit
+│   └── backups/            Sauvegardes automatiques et journal (sauvegarde.log)
 ├── public/
 │   └── assets/             CSS, JavaScript et images servies au navigateur
 ├── storage/
 │   └── legacy/              Copies de l’ancienne application conservées
 ├── tests/                   Vérifications de chargement, rendu et parcours
 ├── tools/
-│   └── maintenance/         Outils CLI de maintenance ponctuelle
+│   ├── maintenance/        Outils CLI de maintenance ponctuelle
+│   ├── sauvegarde-bdd.bat  Dump horodaté, rotation et journal
+│   └── planifier-sauvegarde.bat  Tâche Windows quotidienne
 ├── config.php               Chargeur de compatibilité pour les scripts
 ├── index.php                Point d’entrée HTTP et routeur
 └── README.md
 ```
 
-Le routeur délègue aux contrôleurs. Les contrôleurs valident les entrées et appellent les modèles ; les vues ne portent pas les requêtes SQL. Les cinq variantes de registre sont décrites dans `app/models/Registres.php` et partagent `RegistreModel` et `RegistreController`.
+Le routeur délègue aux contrôleurs. Les contrôleurs valident les entrées et appellent les modèles ; les vues ne portent pas les requêtes SQL. Les six registres sont décrits dans `app/models/Registres.php` et partagent `RegistreModel` et `RegistreController`.
 
 ## Base de données
 
 Avant une mise à jour, sauvegarder la base. Pour appliquer en une fois les évolutions de PGCC v2 sur une base PGCC existante, importer `database/migrations/LogicielCssation.sql` dans phpMyAdmin. Le script cible `pgcc_utf8mb4`, ajoute le registre des mémoires, les champs manquants et les relations. Il préserve les historiques orphelins et affiche les cas qui demandent une correction manuelle.
 
-`LogicielCssation.sql` est une migration, pas une sauvegarde complète ni un installateur pour une base vide. L’export historique de `database/backups/` ne contient que des tables d’historique. Pour sauvegarder les données actuelles, démarrer MySQL puis exporter la base, par exemple avec `mysqldump`.
+`LogicielCssation.sql` est une migration, pas une sauvegarde complète ni un installateur pour une base vide. Pour sauvegarder les données actuelles, utiliser `tools/sauvegarde-bdd.bat` (voir [Sauvegardes automatiques](#sauvegardes-automatiques)).
 
 Les deux applications partagent la table des comptes. Les mots de passe récents sont stockés avec `password_hash()` ; les anciens MD5 sont convertis après une connexion réussie.
 
 L’outil `tools/maintenance/executer_relations.php` est conservé pour une intervention ciblée. Il supprime les traces d’historique sans dossier correspondant ; faire une sauvegarde avant de l’utiliser. La migration unifiée est préférable pour une mise à jour qui doit préserver ces traces.
 
 L’outil `tools/maintenance/compter_mdp_legacy.php` compte, en lecture seule, les empreintes de mots de passe encore stockées en MD5 dans les tables de comptes. La vérification MD5 de `app/core/Password.php` — nécessaire tant que PGCC v1 écrit encore du MD5 dans la table partagée — pourra être retirée quand cet outil annonce zéro et que v1 n’est plus utilisée.
+
+## Sauvegardes automatiques
+
+Les sauvegardes sont écrites dans `database/backups/`. Deux scripts les pilotent :
+
+- `tools/sauvegarde-bdd.bat` : dump complet de `pgcc_utf8mb4` avec `mysqldump` (routines et événements, `utf8mb4`), fichier horodaté à la seconde (`pgcc_utf8mb4_AAAAMMJJ_HHMMSS.sql`), puis **compression `.zip`** (environ 10 fois plus petite). Le script vérifie d'abord que la base est accessible, supprime le fichier en cas d'échec, journalise chaque opération dans `database/backups/sauvegarde.log` (rotation au-delà de 1 Mo) et conserve les **30** sauvegardes les plus récentes (`.sql` ou `.zip`). La compression se désactive avec `COMPRESSER=0`.
+- `tools/planifier-sauvegarde.bat` : installe, contrôle ou retire une tâche Windows quotidienne.
+
+```bat
+tools\planifier-sauvegarde.bat creer 18:00   rem installe la tâche (défaut : 18:00)
+tools\planifier-sauvegarde.bat statut        rem affiche l'état de la tâche
+tools\planifier-sauvegarde.bat executer      rem lance la tâche immédiatement
+tools\planifier-sauvegarde.bat supprimer     rem retire la tâche
+```
+
+Les variables `MYSQLBIN`, `DB`, `USERMYSQL`, `MYSQLPWD`, `KEEP` et `COMPRESSER` peuvent être redéfinies en tête de `sauvegarde-bdd.bat`. La création de la tâche peut exiger une console ouverte en administrateur. Les dossiers `backups` et les fichiers `*.log` sont exclus du versionnement et des sauvegardes.
 
 ## Espace d'administration
 

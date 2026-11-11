@@ -20,42 +20,84 @@ final class MembreController
         if (!in_array($filtre, ['attente', 'actifs', 'retraites'], true)) {
             $filtre = 'attente';
         }
+        $recherche = trim((string) (entree_post('q') ?? entree_get('q', '')));
+        // Filtre par poste (parité avec la v1 : « AG Actifs » et
+        // « ECD / Greffe Actifs » étaient deux listes séparées).
+        $poste = (string) entree_get('poste', '');
+        if (!in_array($poste, ['', 'AG', 'secretaire_AG'], true)) {
+            $poste = '';
+        }
+        $retour = '/membres/' . $filtre . '?' . http_build_query(array_filter([
+            'q' => $recherche, 'poste' => $poste,
+        ]));
 
         // Les actions d'administration ne sont permises qu'aux postes
         // habilités ; la consultation des listes reste ouverte à tous.
+        // Traitées avant le chargement de la liste : elles redirigent.
         if (requete_post()) {
             if (!est_administration($utilisateur)) {
                 flash('erreur', 'Seule l\'administration du Parquet peut effectuer cette action.');
-                rediriger('/membres/' . $filtre);
+                rediriger($retour);
             }
             $this->traiterAction(
                 (int) entree_post('id', 0),
                 $filtre,
+                $retour,
                 (string) entree_post('source', 'client')
             );
+        }
+
+        // Recherche libre : filtre en mémoire (listes courtes) sur les
+        // champs d'identité, de poste et de sigle. Multi-mots : chaque mot
+        // saisi doit apparaître, dans n'importe quel ordre.
+        $membres = (new ClientModel())->liste($filtre);
+        if ($recherche !== '') {
+            $mots = preg_split('/\s+/u', $recherche, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+            $membres = array_values(array_filter(
+                $membres,
+                static function (array $m) use ($mots): bool {
+                    $tout = mb_strtolower($m['nom'] . ' ' . $m['prenom'] . ' ' . $m['login']
+                        . ' ' . $m['poste'] . ' ' . $m['sigle_AG']);
+                    foreach ($mots as $mot) {
+                        if (!str_contains($tout, mb_strtolower($mot))) {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            ));
+        }
+        if ($poste !== '') {
+            $membres = array_values(array_filter(
+                $membres,
+                static fn (array $m): bool => $m['poste'] === $poste
+            ));
         }
 
         View::afficher('membres/liste.php', [
             'titrePage'   => 'Membres — ' . APP_NOM,
             'filtre'      => $filtre,
-            'membres'     => (new ClientModel())->liste($filtre),
+            'membres'     => $membres,
+            'recherche'   => $recherche,
+            'poste'       => $poste,
+            'presence'    => (new PresenceModel())->carte(),
             'utilisateur' => $utilisateur,
         ]);
     }
 
     /**
      * Traite une action d'administration sur un membre, puis revient à
-     * l'onglet d'où l'action a été déclenchée.
+     * l'onglet d'où l'action a été déclenchée (recherche conservée).
      */
-    private function traiterAction(int $id, string $filtre, string $source = 'client'): void
+    private function traiterAction(int $id, string $filtre, string $retour, string $source = 'client'): void
     {
         if (!Auth::verifierJeton(entree_post('jeton'))) {
             flash('erreur', 'Votre session a expiré. Rechargez la page puis réessayez.');
-            rediriger('/membres/' . $filtre);
+            rediriger($retour);
         }
         if ($id <= 0) {
             flash('erreur', 'Le membre demandé est introuvable. La liste a été actualisée.');
-            rediriger('/membres/' . $filtre);
+            rediriger($retour);
         }
 
         $modele = new ClientModel();
@@ -63,8 +105,14 @@ final class MembreController
 
         switch ($action) {
             case 'valider':
-                $modele->valider($id, $source === 'new' ? 'new' : 'client');
-                flash('succes', 'Le compte a été validé. Le membre peut désormais se connecter.');
+                $source = $source === 'new' ? 'new' : 'client';
+                $membre = $modele->donneesNotification($id, $source);
+                if ($modele->valider($id, $source)) {
+                    flash('succes', 'Le compte a été validé. Le membre peut désormais se connecter. '
+                        . Mailer::notifierValidationCompte($membre));
+                } else {
+                    flash('erreur', 'Impossible de valider ce compte. Il a peut-être déjà été traité.');
+                }
                 break;
 
             case 'refuser':
@@ -97,6 +145,6 @@ final class MembreController
             default:
                 flash('erreur', 'Action inconnue.');
         }
-        rediriger('/membres/' . $filtre);
+        rediriger($retour);
     }
 }

@@ -1,7 +1,6 @@
 <?php /** Demande d'inscription : compte créé en attente de validation. */ ?>
-<div class="boite-auth" style="width:560px">
+<div class="boite-auth boite-auth--large">
     <h1>Demande d'inscription</h1>
-    <p class="sous-titre">Le compte sera activé après validation par l'administration du Parquet.</p>
 
     <?php if (!empty($erreurs)): ?>
         <div class="erreur-liste" role="alert" aria-live="assertive">
@@ -18,11 +17,11 @@
         <input type="hidden" name="jeton" value="<?= e(Auth::jeton()) ?>">
         <div class="grille-form">
             <div class="champ">
-                <label>Nom</label>
+                <label>Nom <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="text" name="nom" required value="<?= e(ancienne('nom')) ?>">
             </div>
             <div class="champ">
-                <label>Prénom</label>
+                <label>Prénom <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="text" name="prenom" required value="<?= e(ancienne('prenom')) ?>">
             </div>
             <div class="champ">
@@ -33,19 +32,19 @@
                 </select>
             </div>
             <div class="champ">
-                <label>Matricule (IM)</label>
+                <label>Matricule (IM) <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="number" name="matricule" required value="<?= e(ancienne('matricule')) ?>">
             </div>
             <div class="champ champ-large">
-                <label>Adresse e-mail (identifiant)</label>
+                <label>Adresse e-mail (identifiant) <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="email" name="email" required value="<?= e(ancienne('email')) ?>">
             </div>
             <div class="champ">
-                <label>Mot de passe</label>
+                <label>Mot de passe <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="password" name="motDePasse" required>
             </div>
             <div class="champ">
-                <label>Confirmation</label>
+                <label>Confirmation <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="password" name="confirmation" required>
             </div>
             <div class="champ">
@@ -65,7 +64,7 @@
                 <input type="number" name="bureau" value="<?= e(ancienne('bureau', '0')) ?>">
             </div>
         </div>
-        <button type="submit" class="bouton bouton-bordeaux" style="width:100%;margin-top:10px">Envoyer la demande</button>
+        <button type="submit" class="bouton bouton-bordeaux bouton-bloc" style="margin-top:10px">Envoyer la demande</button>
     </form>
     <div class="liens"><a href="<?= e(url('/connexion')) ?>">J'ai déjà un compte — se connecter</a></div>
 </div>

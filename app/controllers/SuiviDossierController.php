@@ -23,6 +23,23 @@ final class SuiviDossierController
 
         $synthese = $sigleChoisi !== '' ? $modele->synthese($sigleChoisi) : null;
 
+        // Filtre optionnel ouvert depuis les cartes de mesures cliquables
+        // (conclusions rédigées / civils en attente de frappe).
+        $filtre = (string) entree_get('filtre', '');
+
+        // Graphique « dossiers pour conclusion » par Avocat Général
+        // (parité avec grapheSuiviDossier.php de la v1).
+        $pourConclusion = $modele->dossiersPourConclusionParAg();
+        $graphe = Graphiques::barresDeuxSeries(
+            $pourConclusion['labels'],
+            $pourConclusion['penaux'],
+            $pourConclusion['civils'],
+            'Dossiers pour conclusion par Avocat Général',
+            'Pénaux pour conclusion',
+            'Civils pour conclusion',
+            'Toutes listes'
+        );
+
         if (entree_get('export', '') === 'csv' && $synthese !== null) {
             $lignes = [];
             foreach ($synthese['penaux'] as $dossier) {
@@ -52,6 +69,8 @@ final class SuiviDossierController
             'ags'        => $ags,
             'sigleChoisi'=> $sigleChoisi,
             'synthese'   => $synthese,
+            'graphe'     => $graphe,
+            'filtre'     => $filtre,
         ]);
     }
 }

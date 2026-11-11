@@ -27,6 +27,24 @@ final class RegistreController
             return;
         }
 
+        // Export PDF de la liste filtrée (avant tout rendu HTML).
+        if (entree_get('export', '') === 'pdf' && $action === 'liste') {
+            $modeleExport = new RegistreModel($definition);
+            $colonnesPdf = array_map(static fn (array $c): array => [
+                'champ' => $c['nom'], 'libelle' => $c['libelle'],
+            ], registre_colonnes($definition, 'liste'));
+            PdfExporter::telechargerTableau(
+                'registre-' . $this->codeRegistre($definition) . '-' . date('Ymd') . '.pdf',
+                $definition['libelle'],
+                $colonnesPdf,
+                $modeleExport->exporter(
+                    trim((string) entree_get('q', '')),
+                    (string) entree_get('annee', '') !== '' ? (int) entree_get('annee') : null,
+                    entree_get('detention', '') === '1'
+                )
+            );
+        }
+
         match ($action) {
             'liste'      => $this->liste($definition),
             'creer'      => $this->formulaire($definition, null),
@@ -46,6 +64,9 @@ final class RegistreController
         $recherche = trim((string) entree_get('q', ''));
         $anneeBrute = (string) entree_get('annee', '');
         $annee     = $anneeBrute !== '' ? (int) $anneeBrute : null;
+        // Filtre « dossiers en détention » (registres pénaux) : permet à la
+        // tuile du tableau de bord d'ouvrir la liste correspondant au chiffre.
+        $detention = entree_get('detention', '') === '1';
 
         $modele = new RegistreModel($definition);
         if (entree_get('export', '') === 'csv') {
@@ -55,10 +76,30 @@ final class RegistreController
             CsvExporter::telecharger(
                 'registre-' . $this->codeRegistre($definition) . '-' . date('Ymd') . '.csv',
                 $colonnes,
-                $modele->exporter($recherche, $annee)
+                $modele->exporter($recherche, $annee, $detention)
             );
         }
-        $resultat = $modele->liste($page, $recherche, $annee);
+        $resultat = $modele->liste($page, $recherche, $annee, $detention);
+
+        // Vue complète : les colonnes longues s'affichent sans troncature
+        // (tout le contenu du registre visible dans le tableau).
+        $vueComplete = entree_get('vue', '') === 'complet';
+
+        // Indicateur « Mémoires » : nombre de mémoires reliés à chaque
+        // dossier de la page (registres pénaux et civils uniquement).
+        $origineMemoire = match ($definition['table']) {
+            'pgcc_reg_pourvoi_pen' => 'penal',
+            'pgcc_reg_pourvoi_civ' => 'civil',
+            default => null,
+        };
+        $memoiresParDossier = [];
+        if ($origineMemoire !== null) {
+            $idsPage = array_map(
+                static fn (array $ligne): int => (int) $ligne[$definition['cle']],
+                $resultat['lignes']
+            );
+            $memoiresParDossier = (new MemoireModel())->compterParDossier($origineMemoire, $idsPage);
+        }
 
         View::afficher('registres/liste.php', [
             'titrePage'   => $definition['libelle'] . ' — ' . APP_NOM,
@@ -69,7 +110,11 @@ final class RegistreController
             'resultat'    => $resultat,
             'recherche'   => $recherche,
             'annee'       => $annee,
+            'detention'   => $detention,
             'annees'      => $modele->annees(),
+            'vueComplete' => $vueComplete,
+            'afficherMemoires'   => $origineMemoire !== null,
+            'memoiresParDossier' => $memoiresParDossier,
         ]);
     }
 
@@ -111,10 +156,42 @@ final class RegistreController
             }
             $donnees = $this->lireFormulaire($definition, $erreurs);
 
+            // Édition concurrente : le formulaire transporte la version
+            // (date_modification) vue par l'éditeur ; si le dossier a été
+            // modifié entre-temps par un autre agent, on refuse l'écriture.
+            if ($dossier !== null) {
+                $versionRecue = (string) entree_post('version', '');
+                $versionActuelle = (string) ($dossier['date_modification'] ?? '');
+                if ($versionRecue !== $versionActuelle) {
+                    $erreurs[] = 'Ce dossier a été modifié entre-temps'
+                        . (!empty($dossier['modifie_par']) ? ' par ' . $dossier['modifie_par'] : '')
+                        . ' — la fiche affichée était périmée. Rechargez la fiche puis ressaisissez vos modifications.';
+                }
+            }
+
             if ($erreurs === []) {
                 if ($dossier === null) {
-                    $modele->inserer($donnees);
-                    flash('succes', 'Le dossier a été enregistré dans le registre.');
+                    $idNouveau = $modele->inserer($donnees);
+
+                    // Liaison différée : rattache automatiquement les
+                    // mémoires restés sans dossier source portant ce numéro.
+                    $origineMemoire = match ($definition['table']) {
+                        'pgcc_reg_pourvoi_pen' => 'penal',
+                        'pgcc_reg_pourvoi_civ' => 'civil',
+                        default => null,
+                    };
+                    $nbMemoiresLies = 0;
+                    if ($origineMemoire !== null && isset($donnees['num_dossier_PGCS'])) {
+                        $nbMemoiresLies = (new MemoireModel())->lierDossiersManquants(
+                            $origineMemoire,
+                            (string) $donnees['num_dossier_PGCS'],
+                            $idNouveau
+                        );
+                    }
+                    flash('succes', 'Le dossier a été enregistré dans le registre.'
+                        . ($nbMemoiresLies > 0
+                            ? ' ' . $nbMemoiresLies . ' mémoire(s) du même numéro ont été relié(s) automatiquement.'
+                            : ''));
                 } else {
                     $modele->modifier($id, $donnees);
                     flash('succes', 'Le dossier a été mis à jour.');
@@ -135,12 +212,14 @@ final class RegistreController
             'erreurs'   => $erreurs,
             'valeursFormulaire' => $valeursFormulaire,
             'dossiersCivils' => $dossiersCivils,
+            'version'   => $dossier !== null ? (string) ($dossier['date_modification'] ?? '') : '',
         ]);
     }
 
     private function fiche(array $definition, int $id): void
     {
         $modele  = new RegistreModel($definition);
+        $code    = $this->codeRegistre($definition);
         $dossier = $modele->trouver($id);
 
         if ($dossier === null) {
@@ -168,14 +247,25 @@ final class RegistreController
             $siegesCivil = $liaisons->siegesPourDossierCivil((int) $dossier[$definition['cle']]);
         }
 
+        // Pièces jointes du dossier (documents scannés archivés).
+        // Si la table n'existe pas encore (migration non exécutée), la
+        // fiche reste consultable : le bloc affiche une note discrète.
+        $pieces = null;
+        try {
+            $pieces = (new PieceModel())->pourEntite('dossier_' . $code, (int) $dossier[$definition['cle']]);
+        } catch (Throwable) {
+            // pgcc_pieces_jointes absente — dégradation silencieuse.
+        }
+
         View::afficher('registres/fiche.php', [
             'titrePage'  => 'Dossier ' . ($dossier['num_dossier_PGCS'] ?? $id) . ' — ' . APP_NOM,
             'definition' => $definition,
-            'code'       => $this->codeRegistre($definition),
+            'code'       => $code,
             'dossier'    => $dossier,
             'memoires'   => $memoires,
             'dossierCivilLie' => $dossierCivilLie,
             'siegesCivil' => $siegesCivil,
+            'pieces'     => $pieces,
         ]);
     }
 
@@ -214,22 +304,93 @@ final class RegistreController
             return;
         }
 
+        $code = $this->codeRegistre($definition);
+        // Modèle prérempli : civil → ConclusionCivile, pénal/dessaisissement
+        // → ConclusionPenale (format PARQUET GENERAL / CHAMBRE DES AFFAIRES PENALES).
+        $modeleDisponible = in_array($code, ['civils', 'penaux', 'dessaisissements'], true);
+        $conclusion = (string) ($dossier[$definition['conclusion']] ?? '');
+
+        // Export PDF de la conclusion (document A4, sans l'interface).
+        if (entree_get('export', '') === 'pdf') {
+            if (trim($conclusion) === '' && $modeleDisponible) {
+                $conclusion = $code === 'civils'
+                    ? ConclusionCivile::modele($dossier)
+                    : ConclusionPenale::modele($dossier);
+            }
+            PdfExporter::telechargerTexte(
+                'conclusion-' . preg_replace('/[^a-zA-Z0-9._-]/', '_', (string) ($dossier['num_dossier_PGCS'] ?? (string) $id)) . '.pdf',
+                'Conclusion — dossier ' . ($dossier['num_dossier_PGCS'] ?? $id),
+                $conclusion
+            );
+        }
+
         if (requete_post()) {
             if (!Auth::verifierJeton(entree_post('jeton'))) {
                 flash('erreur', 'Votre session a expiré. Rechargez la page puis réessayez.');
-                rediriger('/registres/' . $this->codeRegistre($definition) . '/fiche?id=' . $id);
+                rediriger('/registres/' . $code . '/fiche?id=' . $id);
             }
-            $modele->enregistrerConclusion($id, (string) entree_post('conclusion', ''));
-            flash('succes', 'La conclusion a été enregistrée.');
-            rediriger('/registres/' . $this->codeRegistre($definition) . '/fiche?id=' . $id);
+            if ($modeleDisponible && entree_post('action') === 'modele') {
+                $conclusion = $this->conclusionModeleAvecAnnexe($definition, $dossier, $code);
+                flash('info', 'Le modèle prérempli a été inséré. Complétez les mentions entre crochets avant d’enregistrer.');
+            } else {
+                $modele->enregistrerConclusion($id, (string) entree_post('conclusion', ''));
+                flash('succes', 'La conclusion a été enregistrée.');
+                rediriger('/registres/' . $code . '/fiche?id=' . $id);
+            }
+        } elseif ($modeleDisponible && entree_get('modele', '') === '1') {
+            // Réinsertion du modèle via un lien GET : la page reste rendue en
+            // GET (pas de POST dans l'historique → le bouton « retour » du
+            // navigateur ne déclenche plus d'erreur de cache).
+            $conclusion = $this->conclusionModeleAvecAnnexe($definition, $dossier, $code);
+            flash('info', 'Le modèle prérempli a été réinséré dans l’éditeur. Complétez les mentions entre crochets avant d’enregistrer.');
+        }
+
+        if ($modeleDisponible && trim($conclusion) === '') {
+            $conclusion = $this->conclusionModeleAvecAnnexe($definition, $dossier, $code);
         }
 
         View::afficher('registres/conclusion.php', [
             'titrePage' => 'Conclusion — ' . APP_NOM,
             'definition'=> $definition,
-            'code'      => $this->codeRegistre($definition),
+            'code'      => $code,
             'dossier'   => $dossier,
+            'conclusion'=> $conclusion,
+            'modeleDisponible' => $modeleDisponible,
         ]);
+    }
+
+    /**
+     * Modèle de conclusion prérempli (pénal/civil selon le registre),
+     * complété d'une annexe reprenant l'intégralité des données du dossier
+     * telles qu'affichées sur sa fiche — le document imprimé (A4) contient
+     * ainsi toutes les informations utiles au rédacteur.
+     */
+    private function conclusionModeleAvecAnnexe(array $definition, array $dossier, string $code): string
+    {
+        $modele = $code === 'civils'
+            ? ConclusionCivile::modele($dossier)
+            : ConclusionPenale::modele($dossier);
+
+        $lignes = [
+            '',
+            str_repeat('=', 64),
+            'ANNEXE — DONNÉES COMPLÈTES DU DOSSIER',
+            str_repeat('=', 64),
+        ];
+        foreach ($definition['colonnes'] as $colonne) {
+            if (($colonne['afficherFiche'] ?? true) === false) { continue; }
+            if ($colonne['nom'] === ($definition['conclusion'] ?? '')) { continue; }
+
+            $valeur = $dossier[$colonne['nom']] ?? '';
+            $texte = match ($colonne['type'] ?? '') {
+                'booleen' => bin_vers_bool($valeur) ? 'Oui' : 'Non',
+                'date'    => date_fr((string) $valeur),
+                default   => trim(strip_tags((string) $valeur)),
+            };
+            $lignes[] = $colonne['libelle'] . ' : ' . ($texte === '' ? '—' : $texte);
+        }
+
+        return $modele . "\n" . implode("\n", $lignes);
     }
 
     /**

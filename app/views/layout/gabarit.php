@@ -1,84 +1,62 @@
-<?php /* Gabarit principal : en-tête, menu, contenu, pied de page. */ ?>
+<?php
+/* Gabarit principal : en-tête, menu, contenu, pied de page. */
+$routeNav = trim((string) entree_get('r', ''), '/');
+$sectionNav = explode('/', $routeNav)[0] ?? '';
+$estNav = static fn (array $sections): bool => in_array($sectionNav, $sections, true);
+$navSous = static fn (string $route): string => $routeNav === $route
+    ? ' class="actif" aria-current="page"'
+    : '';
+$membreConnecte = Auth::utilisateur() ?? [];
+$initiales = mb_strtoupper(
+    mb_substr(trim((string) ($membreConnecte['prenom'] ?? '')), 0, 1)
+    . mb_substr(trim((string) ($membreConnecte['nom'] ?? '')), 0, 1)
+);
+if ($initiales === '') {
+    $initiales = 'PG';
+}
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f7f8">
+    <link rel="icon" type="image/svg+xml" href="<?= e(asset('favicon.svg')) ?>">
     <title><?= e($titre) ?></title>
-    <script src="<?= e(asset('theme.js') . '?v=3') ?>"></script>
-    <link rel="stylesheet" href="<?= e(asset('style.css') . '?v=11') ?>">
-    <script src="<?= e(asset('confirmations.js')) ?>" defer></script>
+    <script src="<?= e(asset('theme.js') . '?v=5') ?>"></script>
+    <link rel="stylesheet" href="<?= e(asset('style.css') . '?v=55') ?>">
+    <script src="<?= e(asset('confirmations.js') . '?v=3') ?>" defer></script>
+    <script src="<?= e(asset('filtres.js') . '?v=1') ?>" defer></script>
 </head>
 <body>
+<a class="lien-evitement" href="#contenu">Aller au contenu principal</a>
 <header class="barre-haut">
     <div class="marque">
-        <a href="<?= e(url('/tableau-de-bord')) ?>" class="marque-lien" aria-label="Accueil — Justice Madagascar">
-            <span class="marque-monogramme" aria-hidden="true">MINJUS</span>
+        <a href="<?= e(url('/tableau-de-bord')) ?>" class="marque-lien" aria-label="Accueil — Ministère de la Justice">
+            <img class="marque-logo" src="<?= e(asset('logo-minjus.png')) ?>"
+                 alt="Armoiries — Ministère de la Justice de Madagascar" width="44" height="44">
             <span class="marque-identite">
                 <span class="marque-nom">GESTION DES REGISTRES</span>
-                <span class="marque-organe">Parquet Général · MINJUS</span>
+                <span class="marque-organe">Parquet Général · Ministère de la Justice</span>
             </span>
         </a>
     </div>
-    <nav class="menu">
-        <a href="<?= e(url('/tableau-de-bord')) ?>">Tableau de bord</a>
-
-        <div class="menu-groupe">
-            <a href="#" onclick="return deroulerMenu(event, 'menu-registres')">Registres ▾</a>
-            <div class="menu-deroulant" id="menu-registres">
-                <a href="<?= e(url('/registres/arrivees')) ?>">Registres Arrivés</a>
-                <a href="<?= e(url('/registres/penaux')) ?>">Registres Pénaux</a>
-                <a href="<?= e(url('/registres/civils')) ?>">Registres Civils</a>
-                <a href="<?= e(url('/registres/dessaisissements')) ?>">Registres Déssaisissements</a>
-                <a href="<?= e(url('/registres/siege')) ?>">Registre du Siège</a>
-                <a href="<?= e(url('/memoires')) ?>"><strong>Registre des Mémoires</strong></a>
-            </div>
-        </div>
-
-        <div class="menu-groupe">
-            <a href="#" onclick="return deroulerMenu(event, 'menu-suivis')">Suivis ▾</a>
-            <div class="menu-deroulant" id="menu-suivis">
-                <a href="<?= e(url('/suivis/321')) ?>">Suivis Arrivés (321)</a>
-                <a href="<?= e(url('/suivis/107')) ?>">Suivis Pénaux (107)</a>
-                <a href="<?= e(url('/suivis-dossiers')) ?>">Suivis Dossiers</a>
-                <a href="<?= e(url('/repartition')) ?>">Répartition des dossiers</a>
-            </div>
-        </div>
-
-        <div class="menu-groupe">
-            <a href="#" onclick="return deroulerMenu(event, 'menu-distributions')">Distributions ▾</a>
-            <div class="menu-deroulant" id="menu-distributions">
-                <a href="<?= e(url('/distributions?type=pen')) ?>">Distributions Pénaux</a>
-                <a href="<?= e(url('/distributions?type=civ')) ?>">Distributions Civiles</a>
-            </div>
-        </div>
-
-        <div class="menu-groupe">
-            <a href="#" onclick="return deroulerMenu(event, 'menu-membres')">Membres ▾</a>
-            <div class="menu-deroulant" id="menu-membres">
-                <a href="<?= e(url('/membres/attente')) ?>">En attente de validation</a>
-                <a href="<?= e(url('/membres/actifs')) ?>">Membres actifs</a>
-                <a href="<?= e(url('/membres/retraites')) ?>">Retraités</a>
-            </div>
-        </div>
-
+    <nav class="menu" aria-label="Navigation principale">
+        <a href="<?= e(url('/tableau-de-bord')) ?>"<?= $estNav(['tableau-de-bord']) ? ' class="actif" aria-current="page"' : '' ?>>Accueil</a>
+        <a href="<?= e(url('/registres/arrivees')) ?>"<?= $estNav(['registres']) ? ' class="actif" aria-current="page"' : '' ?>>Registres</a>
+        <a href="<?= e(url('/memoires')) ?>"<?= $estNav(['memoires']) ? ' class="actif" aria-current="page"' : '' ?>>Mémoires</a>
+        <a href="<?= e(url('/suivis/321')) ?>"<?= $estNav(['suivis', 'suivis-dossiers', 'repartition']) ? ' class="actif" aria-current="page"' : '' ?>>Suivis</a>
+        <a href="<?= e(url('/distributions')) ?>"<?= $estNav(['distributions']) ? ' class="actif" aria-current="page"' : '' ?>>Distributions</a>
+        <a href="<?= e(url('/membres/actifs')) ?>"<?= $estNav(['membres']) ? ' class="actif" aria-current="page"' : '' ?>>Membres</a>
         <?php if (est_administration()): ?>
-        <div class="menu-groupe">
-            <a href="#" onclick="return deroulerMenu(event, 'menu-administration')">Administration ▾</a>
-            <div class="menu-deroulant" id="menu-administration">
-                <a href="<?= e(url('/administration')) ?>"><strong>Tableau de bord admin</strong></a>
-                <a href="<?= e(url('/administration/comptes')) ?>">Comptes utilisateurs</a>
-                <a href="<?= e(url('/administration/audit')) ?>">Journal d’activité</a>
-                <a href="<?= e(url('/membres/attente')) ?>">Demandes en attente</a>
-            </div>
-        </div>
+        <a href="<?= e(url('/administration')) ?>"<?= $estNav(['administration']) ? ' class="actif" aria-current="page"' : '' ?>>Admin</a>
         <?php endif; ?>
-
-        <a href="<?= e(url('/profil')) ?>">Mes Informations</a>
-        <a href="<?= e(url('/aide')) ?>">Aide</a>
+        <a href="<?= e(url('/profil')) ?>"<?= $estNav(['profil']) ? ' class="actif" aria-current="page"' : '' ?>>Profil</a>
+        <a href="<?= e(url('/aide')) ?>"<?= $estNav(['aide']) ? ' class="actif" aria-current="page"' : '' ?>>Aide</a>
     </nav>
     <div class="utilisateur">
-        <span class="utilisateur-nom"><?= e(Auth::nomComplet()) ?></span>
+        <span class="utilisateur-initiales" aria-hidden="true"><?= e($initiales) ?></span>
+        <span class="utilisateur-nom"><span class="pastille-presence en-ligne" title="Connecté"><span class="pastille-point" aria-hidden="true"></span></span><?= e(Auth::nomComplet()) ?></span>
         <button type="button" class="bouton-theme" data-theme-toggle title="Changer le thème" aria-label="Changer le thème"><span aria-hidden="true">◐</span><span>Thème</span></button>
         <form method="post" action="<?= e(url('/deconnexion')) ?>"
               data-confirm-title="Déconnexion"
@@ -90,18 +68,14 @@
     </div>
 </header>
 
-<main class="conteneur">
-    <?php $flash = recuperer_flash(); if ($flash !== null): ?>
-        <div class="alerte alerte-<?= e($flash['type']) ?>"
-             role="<?= $flash['type'] === 'erreur' ? 'alert' : 'status' ?>"
-             aria-live="<?= $flash['type'] === 'erreur' ? 'assertive' : 'polite' ?>"><?= e($flash['message']) ?></div>
-    <?php endif; ?>
+<main class="conteneur" id="contenu">
+    <?php $flash = recuperer_flash(); require __DIR__ . '/../partiels/flash.php'; ?>
 
     <?= $contenu ?>
 </main>
 
 <footer class="pied">
-    <span>Parquet Général — Justice Madagascar · Gestion des registres judiciaires</span>
+    <span>Parquet Général — Ministère de la Justice · Gestion des registres judiciaires</span>
     <span>© <?= date('Y') ?></span>
 </footer>
 
@@ -109,17 +83,32 @@
 /** Ouvre / ferme un sous-menu déroulant. */
 function deroulerMenu(evenement, id) {
     evenement.preventDefault();
+    const declencheur = evenement.currentTarget;
     document.querySelectorAll('.menu-deroulant.ouvert').forEach(m => {
-        if (m.id !== id) m.classList.remove('ouvert');
+        if (m.id !== id) {
+            m.classList.remove('ouvert');
+            const controle = document.querySelector('[aria-controls="' + m.id + '"]');
+            if (controle) controle.setAttribute('aria-expanded', 'false');
+        }
     });
-    document.getElementById(id).classList.toggle('ouvert');
+    const menu = document.getElementById(id);
+    const ouvert = menu.classList.toggle('ouvert');
+    if (declencheur) declencheur.setAttribute('aria-expanded', ouvert ? 'true' : 'false');
     return false;
 }
+function fermerMenus() {
+    document.querySelectorAll('.menu-deroulant.ouvert').forEach(m => m.classList.remove('ouvert'));
+    document.querySelectorAll('.menu-groupe > a[aria-expanded="true"]').forEach(a => a.setAttribute('aria-expanded', 'false'));
+}
 document.addEventListener('click', function (e) {
-    if (!e.target.closest('.menu-groupe')) {
-        document.querySelectorAll('.menu-deroulant.ouvert').forEach(m => m.classList.remove('ouvert'));
-    }
+    if (!e.target.closest('.menu-groupe')) fermerMenus();
 });
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') fermerMenus();
+});
+const lienActif = document.querySelector('.menu .actif');
+if (lienActif) lienActif.scrollIntoView({ block: 'nearest', inline: 'center' });
 </script>
 </body>
 </html>
+

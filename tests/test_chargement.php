@@ -50,7 +50,7 @@ verifier(Auth::utilisateur() !== null, 'Auth::utilisateur() lit la session');
 verifier(strlen(Auth::jeton()) === 64, 'Auth::jeton() génère 64 hex');
 
 echo '--- Classes métier ---' . PHP_EOL;
-foreach (['Auth','View','Database','Graphiques','RegistreModel','MemoireModel','SuiviModel',
+foreach (['Auth','View','Database','Graphiques','RegistreModel','RechercheModel','MemoireModel','SuiviModel',
           'SuiviDossierModel','RepartitionModel','DistributionModel','ClientModel','StatsModel',
           'AdministrationModel','AuthController','DashboardController','RegistreController','MemoireController',
           'SuiviController','SuiviDossierController','RepartitionController','DistributionController',

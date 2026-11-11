@@ -3,7 +3,7 @@
  * Profil personnel. Variables : $membre.
  */
 ?>
-<div class="titre-page">
+<div class="titre-page titre-page-formulaire">
     <h1>Mes informations</h1>
 </div>
 
@@ -11,7 +11,7 @@
     <div class="alerte alerte-erreur">Compte introuvable.</div>
     <?php return; endif; ?>
 
-<div class="carte">
+<div class="carte carte-formulaire">
     <h2>Informations du compte</h2>
     <form method="post" action="<?= e(url('/profil')) ?>"
           data-confirm-title="Enregistrer mes informations"
@@ -21,11 +21,11 @@
         <input type="hidden" name="action" value="infos">
         <div class="grille-form">
             <div class="champ">
-                <label>Nom</label>
+                <label>Nom <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="text" name="nom" value="<?= e($membre['nom']) ?>" required>
             </div>
             <div class="champ">
-                <label>Prénom</label>
+                <label>Prénom <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="text" name="prenom" value="<?= e($membre['prenom']) ?>" required>
             </div>
             <div class="champ">
@@ -45,11 +45,13 @@
                 <input type="number" name="bureau" value="<?= (int) $membre['num_bureau'] ?>">
             </div>
         </div>
-        <button type="submit" class="bouton bouton-vert" style="margin-top:8px">Enregistrer</button>
+        <div class="actions-formulaire">
+            <button type="submit" class="bouton bouton-vert">Enregistrer</button>
+        </div>
     </form>
 </div>
 
-<div class="carte">
+<div class="carte carte-formulaire">
     <h2>Changer mon mot de passe</h2>
     <form method="post" action="<?= e(url('/profil')) ?>"
           data-confirm-title="Changer mon mot de passe"
@@ -59,18 +61,20 @@
         <input type="hidden" name="action" value="motdepasse">
         <div class="grille-form">
             <div class="champ">
-                <label>Mot de passe actuel</label>
+                <label>Mot de passe actuel <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="password" name="motDePasseActuel" required>
             </div>
             <div class="champ">
-                <label>Nouveau mot de passe</label>
+                <label>Nouveau mot de passe <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="password" name="motDePasseNouveau" required>
             </div>
             <div class="champ">
-                <label>Confirmation</label>
+                <label>Confirmation <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="password" name="motDePasseConfirm" required>
             </div>
         </div>
-        <button type="submit" class="bouton" style="margin-top:8px">Changer le mot de passe</button>
+        <div class="actions-formulaire">
+            <button type="submit" class="bouton">Changer le mot de passe</button>
+        </div>
     </form>
 </div>

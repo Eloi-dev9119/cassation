@@ -1,0 +1,15 @@
+<?php
+declare(strict_types=1);
+
+return [
+    'PGCC_MAIL_ACTIF'      => 'true',
+    'PGCC_MAIL_HOST'       => 'smtp.exemple.mg',
+    'PGCC_MAIL_PORT'       => '587',
+    'PGCC_MAIL_SECURITE'   => 'tls',
+    'PGCC_MAIL_USER'       => 'no-reply@exemple.mg',
+    'PGCC_MAIL_PASSWORD'   => 'mot-de-passe',
+    'PGCC_MAIL_FROM'       => 'no-reply@exemple.mg',
+    'PGCC_MAIL_FROM_NAME'  => 'PGCC - Parquet Général',
+    'PGCC_MAIL_VERIFY_CERT' => 'true',
+    'PGCC_MAIL_TIMEOUT'    => '15',
+];

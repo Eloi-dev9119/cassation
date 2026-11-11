@@ -60,6 +60,32 @@ rendre('registres/liste.php', [
     'resultat' => ['lignes' => [$ligneDossier], 'total' => 1, 'pages' => 1, 'page' => 1],
     'recherche' => '', 'annee' => null, 'annees' => [2025],
 ], 'registres/liste (avec confirmation archivage corrigée)');
+rendre('registres/liste.php', [
+    'titrePage' => 't', 'definition' => $def, 'code' => 'penaux',
+    'resultat' => ['lignes' => [$ligneDossier], 'total' => 1, 'pages' => 1, 'page' => 1],
+    'recherche' => '', 'annee' => null, 'annees' => [2025],
+    'afficherMemoires' => true, 'memoiresParDossier' => [42 => 3],
+], 'registres/liste (indicateur Mémoires : dossier 42 = 3)');
+
+// Vérification ciblée du badge « Mémoires » : colonne présente, compteur
+// affiché quand le dossier a des mémoires, tiret sinon.
+ob_start();
+View::afficher('registres/liste.php', [
+    'titrePage' => 't', 'definition' => $def, 'code' => 'penaux',
+    'resultat' => [
+        'lignes' => [$ligneDossier, array_merge($ligneDossier, ['id_reg_pourvoi' => 99, 'num_dossier_PGCS' => '2025-0999'])],
+        'total' => 2, 'pages' => 1, 'page' => 1,
+    ],
+    'recherche' => '', 'annee' => null, 'annees' => [2025],
+    'afficherMemoires' => true, 'memoiresParDossier' => [42 => 2],
+]);
+$htmlIndicateur = (string) ob_get_clean();
+$badgeOk = str_contains($htmlIndicateur, '>Mémoires</th>')
+    && str_contains($htmlIndicateur, 'badge badge-vert')
+    && str_contains($htmlIndicateur, '2 mémoire(s) rattaché(s)')
+    && str_contains($htmlIndicateur, '>—</span>');
+echo ($badgeOk ? '  OK  ' : 'ECHEC ') . 'indicateur Mémoires : en-tête + badge compteur + « — »' . PHP_EOL;
+if (!$badgeOk) { $echecs++; }
 rendre('registres/fiche.php', [
     'titrePage' => 't', 'definition' => $def, 'code' => 'penaux',
     'dossier' => $ligneDossier, 'memoires' => [],

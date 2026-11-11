@@ -152,6 +152,45 @@ final class SuiviModel
     }
 
     /**
+     * Lit un suivi en vue de sa modification, ou null s'il n'existe pas.
+     */
+    public function trouver(string $type, int $id): ?array
+    {
+        $def = self::definition($type);
+        if ($def === null) {
+            throw new InvalidArgumentException('Type de suivi inconnu.');
+        }
+        $req = Database::connexion()->prepare(
+            'SELECT * FROM ' . nom_sql($def['table']) . ' WHERE ' . nom_sql($def['cle']) . ' = :id'
+        );
+        $req->execute(['id' => $id]);
+        $ligne = $req->fetch();
+        return $ligne === false ? null : $ligne;
+    }
+
+    /**
+     * Enregistre la modification d'un suivi (traçée dans modifie_par).
+     * @param array $donnees colonne => valeur (déjà validées par lireFormulaire)
+     */
+    public function modifier(string $type, int $id, array $donnees): bool
+    {
+        $def = self::definition($type);
+        if ($def === null) {
+            throw new InvalidArgumentException('Type de suivi inconnu.');
+        }
+        $donnees['modifie_par'] = utilisateur_login();
+        $affectations = implode(', ', array_map(
+            fn (string $c): string => nom_sql($c) . ' = :' . $c,
+            array_keys($donnees)
+        ));
+        $req = Database::connexion()->prepare(
+            'UPDATE ' . nom_sql($def['table']) . ' SET ' . $affectations
+            . ' WHERE ' . nom_sql($def['cle']) . ' = :id'
+        );
+        return $req->execute($donnees + ['id' => $id]);
+    }
+
+    /**
      * Archive ou désarchive un suivi (traçé dans modifie_par).
      */
     public function archiver(string $type, int $id, bool $archiver): bool

@@ -7,3 +7,10 @@ desktop.ini
 # Configuration locale sensible (les valeurs réelles viennent des
 # variables d'environnement PGCC_DB_*, voir config/app.php et README)
 .env
+
+# Configuration mail locale : contient un mot de passe SMTP réel.
+# Le modèle versionné est config/mail.local.php.example.
+config/mail.local.php
+
+# Sauvegardes de base de données : dumps volumineux et sensibles.
+database/backups/

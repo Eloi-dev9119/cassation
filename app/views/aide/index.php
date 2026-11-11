@@ -1,123 +1,155 @@
-<?php /* Aide intégrée : condensé de docs/guide-utilisateur.md. */ ?>
+<?php /* Aide intégrée : version condensée de docs/guide-utilisateur.md. */ ?>
 <div class="titre-page">
     <h1>Aide de l'application</h1>
     <div class="actions"><a class="bouton bouton-secondaire" href="<?= e(url('/tableau-de-bord')) ?>">← Retour au tableau de bord</a></div>
 </div>
 
 <div class="alerte alerte-info">
-    Ce guide condensé couvre les gestes courants. Le guide complet (détail de chaque
-    champ, conventions de nommage, questions fréquentes) est maintenu dans le dépôt :
+    Ce guide présente les gestes courants, dans l'ordre où vous les utilisez au quotidien.
+    Le guide complet, qui détaille chaque champ, reste disponible dans le dépôt :
     <strong>docs/guide-utilisateur.md</strong>.
 </div>
 
 <div class="carte">
     <h2 id="sommaire">Sommaire</h2>
     <ul class="aide-sommaire">
-        <li><a href="#connexion">Connexion, mot de passe et comptes</a></li>
+        <li><a href="#tableau">Tableau de bord</a></li>
+        <li><a href="#connexion">Connexion et comptes</a></li>
         <li><a href="#registres">Registres et dossiers</a></li>
         <li><a href="#memoires">Mémoires</a></li>
-        <li><a href="#distributions">Distributions et répartition</a></li>
-        <li><a href="#membres">Administration (PG/SG)</a></li>
-        <li><a href="#profil">Mes informations et mot de passe</a></li>
-        <li><a href="#listes">Recherche, export CSV et impression</a></li>
+        <li><a href="#suivis">Suivis, synthèses et distributions</a></li>
+        <li><a href="#administration">Administration et sauvegardes</a></li>
+        <li><a href="#profil">Mes informations</a></li>
+        <li><a href="#recherche">Recherche, exports et impression</a></li>
         <li><a href="#faq">Questions fréquentes</a></li>
     </ul>
 </div>
 
 <div class="carte">
-    <h2 id="connexion">Connexion, mot de passe et comptes</h2>
+    <h2 id="tableau">Tableau de bord</h2>
+    <p>Le tableau de bord rassemble la recherche, les chiffres clés et tous les modules de l'application.</p>
     <ul>
-        <li>Le mot de passe est <strong>commun aux applications PGCC v1 et v2</strong> ; le changer ici le change partout. À la première connexion réussie, un ancien mot de passe est converti automatiquement au format sécurisé actuel.</li>
-        <li><strong>Mot de passe oublié</strong> : depuis la page de connexion, saisir votre e-mail puis répondre à votre question secrète. Sans question secrète définie, contactez l'administration.</li>
-        <li><strong>Nouveau compte</strong> : « Créer un compte » enregistre une demande ; elle devient active après validation par l'administration (PG ou SG).</li>
+        <li><strong>Recherche globale</strong> : saisissez au moins 2 caractères dans le champ situé en haut de la page (numéro de dossier, nom de partie, juridiction, arrêt attaqué, requête…). La recherche porte sur les <strong>six registres</strong> et sur les <strong>mémoires</strong>. Les résultats sont regroupés par registre, avec le nombre total de correspondances ; chaque ligne ouvre directement la fiche du dossier et un lien permet d'ouvrir la liste complète du registre sur ce terme.</li>
+        <li><strong>Accès aux modules</strong> : les boutons sont toujours visibles, sans menu à dérouler. Ils sont classés en trois groupes :
+            <ul>
+                <li><strong>Registres</strong> : Arrivées, Pénaux, Civils, Dessaisissements, Siège, PIL et Mémoires, avec le volume de dossiers de chacun ;</li>
+                <li><strong>Suivis et synthèses</strong> : Suivi 321, Suivi 107, Synthèse des suivis et Répartition ;</li>
+                <li><strong>Distributions</strong> : listes de dossiers confiés aux Avocats Généraux.</li>
+            </ul>
+        </li>
+        <li><strong>Compteurs principaux</strong> : dossiers d'arrivée, pourvois pénaux et pourvois civils. Les compteurs secondaires indiquent les dessaisissements, les dossiers PIL, les dossiers en détention, les mémoires enregistrés et les membres actifs.</li>
+        <li><strong>Conclusions à traiter</strong> : pour les registres Pénaux, Civils et Dessaisissements, deux chiffres sont affichés : les conclusions encore <strong>à rédiger</strong> et celles qui sont rédigées mais restent <strong>à transmettre pour frappe</strong> au secrétariat. Chaque bloc ouvre le registre correspondant.</li>
+        <li><strong>Derniers dossiers modifiés</strong> : les six dossiers les plus récemment créés ou modifiés, tous registres confondus, avec un lien direct vers leur fiche.</li>
+        <li><strong>Graphique annuel</strong> : volume de dossiers par année pour les arrivées, les pourvois pénaux et les pourvois civils.</li>
+    </ul>
+</div>
+
+<div class="carte">
+    <h2 id="connexion">Connexion et comptes</h2>
+    <ul>
+        <li>La connexion se fait avec votre <strong>adresse e-mail</strong> et votre mot de passe. Le mot de passe est <strong>commun aux applications PGCC v1 et v2</strong> : le modifier ici le modifie partout. Un ancien mot de passe est converti automatiquement au format sécurisé lors de la première connexion réussie.</li>
+        <li><strong>Mot de passe oublié</strong> : depuis la page de connexion, saisissez votre e-mail puis répondez à votre question secrète. Si aucune question secrète n'est définie, contactez l'administration (PG ou SG).</li>
+        <li><strong>Demande de compte</strong> : le formulaire d'inscription enregistre une demande. Le compte devient actif après validation par l'administration.</li>
         <li>La session se ferme automatiquement après <strong>une heure d'inactivité</strong>.</li>
-        <li>Chaque action sensible (suppression, archivage, déconnexion) demande une <strong>confirmation</strong>.</li>
+        <li>Les actions sensibles (archivage, suppression, déconnexion) demandent une <strong>confirmation</strong> avant d'être exécutées.</li>
     </ul>
 </div>
 
 <div class="carte">
     <h2 id="registres">Registres et dossiers</h2>
-    <p>Les cinq registres (Arrivés, Pénaux, Civils, Déssaisissements, Siège) partagent les mêmes gestes :</p>
+    <p>L'application gère <strong>six registres de dossiers</strong>, présentés dans le tableau ci-dessous.</p>
     <div class="tableau-enveloppe">
         <table class="liste">
-            <thead><tr><th>Geste</th><th>Comment</th></tr></thead>
+            <thead><tr><th>Registre</th><th>Contenu</th></tr></thead>
             <tbody>
-                <tr><td>Créer un dossier</td><td class="rogne">« Nouveau dossier » — champs <strong>*</strong> obligatoires ; numéro d'ordre et année identifient la ligne du registre.</td></tr>
-                <tr><td>Consulter</td><td class="rogne">« Fiche » — toutes les informations, mémoires rattachés et liaisons (siège ↔ dossier civil).</td></tr>
-                <tr><td>Modifier</td><td class="rogne">« Modifier » — formulaire pré-rempli ; la date d'insertion d'origine est conservée.</td></tr>
-                <tr><td>Archiver</td><td class="rogne">« Archiver » range le dossier traité sans le supprimer — l'opération est réversible (« Désarchiver »).</td></tr>
-                <tr><td>Conclure</td><td class="rogne">Pénaux, Civils et Déssaisissements : « Conclusion » pour rédiger le texte de conclusion.</td></tr>
+                <tr><td><strong>Arrivées</strong></td><td class="rogne">Dossiers reçus au Parquet : bordereau d'arrivée, juridiction, numéro de dossier et personnes concernées.</td></tr>
+                <tr><td><strong>Pénaux</strong></td><td class="rogne">Pourvois pénaux : parties, inculpation, arrêt attaqué, juridiction, audience, arrêt et conclusion.</td></tr>
+                <tr><td><strong>Civils</strong></td><td class="rogne">Pourvois civils : parties, arrêt attaqué, mémoire, distribution, audience et conclusion.</td></tr>
+                <tr><td><strong>Dessaisissements</strong></td><td class="rogne">Demandes de dessaisissement et suites données.</td></tr>
+                <tr><td><strong>Siège</strong></td><td class="rogne">Cassations civiles suivies au Siège, reliées à un dossier civil du registre Civils.</td></tr>
+                <tr><td><strong>PIL</strong></td><td class="rogne">Pourvois dans l'intérêt de la loi : lettre du ministère, magistrat instructeur, requête, audience et arrêt.</td></tr>
             </tbody>
         </table>
     </div>
-    <p><strong>Siège (Cassation civile)</strong> : chaque dossier doit être relié à un dossier civil existant ; depuis la fiche d'un dossier civil, « Ouvrir un dossier au siège » présélectionne la liaison.</p>
-    <p>Chaque ligne mémorise <strong>qui l'a créée et qui l'a modifiée en dernier</strong> (visible en fiche et en modification).</p>
+    <p>Tous les registres fonctionnent de la même manière :</p>
+    <div class="tableau-enveloppe">
+        <table class="liste">
+            <thead><tr><th>Geste</th><th>Comment faire</th></tr></thead>
+            <tbody>
+                <tr><td>Créer un dossier</td><td class="rogne">Bouton « + Nouveau dossier ». Les champs marqués <strong>*</strong> sont obligatoires ; le numéro d'ordre et l'année identifient la ligne du registre.</td></tr>
+                <tr><td>Consulter</td><td class="rogne">Bouton « Fiche » : toutes les informations du dossier, les mémoires rattachés, les pièces jointes et les liaisons éventuelles.</td></tr>
+                <tr><td>Modifier</td><td class="rogne">Bouton « Modifier » : le formulaire s'ouvre pré-rempli et la date d'insertion d'origine est conservée.</td></tr>
+                <tr><td>Archiver</td><td class="rogne">Bouton « Archiver » : le dossier traité est retiré de la liste active sans être supprimé. L'opération est réversible avec « Désarchiver ».</td></tr>
+                <tr><td>Rédiger la conclusion</td><td class="rogne">Registres Pénaux, Civils et Dessaisissements : bouton « Conclusion » pour rédiger ou corriger le texte, puis le transmettre pour frappe au secrétariat.</td></tr>
+            </tbody>
+        </table>
+    </div>
+    <p><strong>Cas du registre du Siège</strong> : chaque dossier doit être relié à un dossier civil existant. En créant le suivi depuis la fiche d'un dossier civil, la liaison est déjà présélectionnée.</p>
+    <p>Chaque enregistrement conserve <strong>qui l'a créé</strong> et <strong>qui l'a modifié en dernier</strong>, avec les dates correspondantes (visibles sur la fiche et dans le formulaire de modification).</p>
 </div>
 
 <div class="carte">
     <h2 id="memoires">Mémoires</h2>
     <ul>
-        <li>Type : <strong>ampliatif</strong> (demandeur) ou <strong>en défense</strong> (défendeur) ; origine : dossier <strong>pénal</strong> ou <strong>civil</strong>.</li>
-        <li>Le <strong>numéro de dossier PGCS</strong> est obligatoire. Plusieurs dossiers homonymes ? L'application demande de choisir la ligne précise ; un seul correspond ? La liaison est automatique.</li>
-        <li>Numéro d'ordre <strong>attribué automatiquement</strong> si laissé vide à la création.</li>
-        <li>États : Déposé → Transmis au rapporteur → Rapport établi → Classé (changement depuis la liste, avec confirmation).</li>
-        <li>Recommandé : créer le mémoire depuis la fiche du dossier (« Ajouter un mémoire ») — le pré-remplissage garantit la liaison.</li>
+        <li>Un mémoire est soit <strong>ampliatif</strong> (déposé par le demandeur), soit <strong>en défense</strong> (déposé par le défendeur). Son origine indique le registre concerné : <strong>pénal</strong> ou <strong>civil</strong>.</li>
+        <li>Le <strong>numéro de dossier PGCS</strong> est obligatoire. Si plusieurs dossiers portent le même numéro, l'application demande de choisir la ligne précise ; si un seul dossier correspond, la liaison est automatique.</li>
+        <li>Le numéro d'ordre est <strong>attribué automatiquement</strong> lorsqu'il est laissé vide à la création.</li>
+        <li>Le mémoire passe par les états suivants : <strong>Déposé → Transmis au rapporteur → Rapport établi → Classé</strong>. L'état se change depuis la liste, avec confirmation si nécessaire.</li>
+        <li>Pour garantir la liaison, il est recommandé de créer le mémoire depuis la fiche du dossier concerné, avec le bouton « Enregistrer un mémoire ».</li>
     </ul>
 </div>
 
 <div class="carte">
-    <h2 id="distributions">Distributions et répartition</h2>
+    <h2 id="suivis">Suivis, synthèses et distributions</h2>
     <ul>
-        <li>« Nouvelle liste » propose <strong>uniquement les dossiers non encore distribués</strong> du type choisi ; un même dossier ne peut pas être distribué deux fois.</li>
-        <li><strong>Convention de nommage</strong> : inclure le mois dans le nom de la liste (ex. « Liste Octobre 2026 ») — la Répartition rattache les listes aux mois par leur nom.</li>
-        <li><strong>Répartition</strong> : comptage mensuel des distributions par Avocat Général (pénaux / civils) avec graphique.</li>
-        <li><strong>Suivis Dossiers</strong> : synthèse par AG — conclusions rédigées ou non, audience, arrêt, civils en attente de frappe.</li>
-        <li><strong>Suivis 321 / 107</strong> : suivis d'arrivées et de dossiers pénaux transmis au PGCS ; numéro d'ordre automatique, archivage réversible.</li>
+        <li><strong>Suivi 321</strong> : suivis d'arrivée des dossiers transmis au PGCS. <strong>Suivi 107</strong> : suivis des dossiers pénaux. Les deux listes partagent la même présentation : recherche, ajout, modification, archivage réversible et numéro d'ordre automatique.</li>
+        <li><strong>Synthèse des suivis</strong> (page « Suivis Dossiers ») : pour chaque Avocat Général, nombre de dossiers pénaux et civils distribués, conclusions rédigées, civils en attente de frappe et graphique de charge. Utilisez le sélecteur pour changer d'Avocat Général.</li>
+        <li><strong>Répartition</strong> : comptage mensuel des distributions par Avocat Général, avec graphique et export.</li>
+        <li><strong>Distributions</strong> : « Nouvelle liste » ne propose que les dossiers du type choisi qui n'ont pas encore été distribués ; un dossier ne peut pas être distribué deux fois. Pour que la Répartition rattache une liste au bon mois, incluez le mois dans son nom (par exemple « Liste Octobre 2026 »).</li>
     </ul>
 </div>
 
 <div class="carte">
-    <h2 id="membres">Administration (PG/SG)</h2>
+    <h2 id="administration">Administration et sauvegardes</h2>
     <ul>
-        <li>Le menu <strong>Administration</strong> n'apparaît que pour les postes <strong>PG</strong> et <strong>SG</strong>. Il donne accès au tableau de bord, aux comptes utilisateurs et au journal d'activité.</li>
-        <li><strong>Créer un compte</strong> : le compte est immédiatement actif ; l'e-mail doit être unique.</li>
-        <li><strong>Modifier un compte</strong> : identité, poste, sigle, matricule, bureau et statut. Le mot de passe se réinitialise depuis la liste des comptes.</li>
-        <li><strong>Journal d'activité</strong> : 200 dernières créations et modifications enregistrées dans les tables métier ; consultable et imprimable.</li>
-        <li>Les listes de membres restent consultables par tous ; <strong>les actions sont réservées aux postes PG et SG</strong>.</li>
-        <li><strong>Valider</strong> une inscription : le compte devient actif ; si un compte du même e-mail existait déjà, il est réactivé et le mot de passe choisi à l'inscription est appliqué.</li>
-        <li><strong>Refuser</strong> une inscription en attente : la demande est supprimée définitivement de <code>pgcc_new_client</code> et l'e-mail pourra faire une nouvelle demande.</li>
-        <li><strong>Mettre à la retraite</strong> / <strong>Réactiver</strong> : coupe ou restaure l'accès, sans perdre les données.</li>
-        <li><strong>Réinitialiser un mot de passe</strong> : le mot de passe temporaire affiché est « pgcc » suivi de l'année (ex. pgcc2026) — le transmettre au membre par un canal sûr ; il le changera dans Mes Informations.</li>
+        <li>Le menu <strong>Administration</strong> n'apparaît que pour les postes <strong>PG</strong> et <strong>SG</strong>. Il donne accès au tableau de bord administratif, aux comptes utilisateurs et au journal d'activité.</li>
+        <li><strong>Créer un compte</strong> : le compte est immédiatement actif ; l'adresse e-mail doit être unique. <strong>Modifier un compte</strong> permet de changer l'identité, le poste, le sigle, le matricule, le bureau et le statut.</li>
+        <li><strong>Journal d'activité</strong> : les 200 dernières créations et modifications enregistrées dans les tables métier ; il peut être consulté et imprimé.</li>
+        <li><strong>Demandes d'inscription</strong> : « Valider » active le compte ; « Refuser » supprime définitivement la demande et permet à la personne de recommencer. Si un compte portant le même e-mail existait déjà, il est réactivé.</li>
+        <li><strong>Retraite et réactivation</strong> : coupent ou rétablissent l'accès sans perdre les données.</li>
+        <li><strong>Réinitialiser un mot de passe</strong> : un mot de passe temporaire est affiché (« pgcc » suivi de l'année, par exemple pgcc2026). Transmettez-le par un canal sûr ; le membre le changera dans « Mes informations ».</li>
+        <li><strong>Sauvegardes automatiques</strong> : chaque jour, la tâche planifiée exécute <code>tools\sauvegarde-bdd.bat</code>. Le script crée un dump horodaté dans <code>database\backups\</code>, le compresse en <code>.zip</code>, conserve les 30 sauvegardes les plus récentes et écrit son journal dans <code>sauvegarde.log</code>. Pour installer, contrôler ou retirer la tâche, lancez <code>tools\planifier-sauvegarde.bat</code> avec l'argument <code>creer 18:00</code>, <code>statut</code>, <code>executer</code> ou <code>supprimer</code>.</li>
+        <li>Les listes de membres restent consultables par tous ; <strong>les actions d'administration sont réservées aux postes PG et SG</strong>.</li>
     </ul>
 </div>
 
 <div class="carte">
-    <h2 id="profil">Mes informations et mot de passe</h2>
+    <h2 id="profil">Mes informations</h2>
     <ul>
-        <li>Accessible depuis le menu <strong>Mes informations</strong>.</li>
-        <li>Modifier son <strong>nom</strong>, <strong>prénom</strong> et <strong>numéro de bureau</strong>.</li>
-        <li>Changer son mot de passe : saisir le mot de passe actuel, le nouveau (4 caractères minimum) et sa confirmation. Le nouveau mot de passe est immédiatement valable <strong>dans les deux applications PGCC</strong>.</li>
-        <li>Un ancien mot de passe MD5 est automatiquement converti en format sécurisé à la première connexion réussie.</li>
+        <li>La page <strong>Mes informations</strong> permet de modifier votre <strong>nom</strong>, votre <strong>prénom</strong> et votre <strong>numéro de bureau</strong>.</li>
+        <li>Pour changer de mot de passe : saisissez le mot de passe actuel, le nouveau (4 caractères minimum) puis sa confirmation. Le nouveau mot de passe est immédiatement valable <strong>dans les deux applications PGCC</strong>.</li>
+        <li>Un ancien mot de passe MD5 est converti automatiquement en format sécurisé à la première connexion réussie.</li>
     </ul>
 </div>
 
 <div class="carte">
-    <h2 id="listes">Recherche, export CSV et impression</h2>
+    <h2 id="recherche">Recherche, exports et impression</h2>
     <ul>
-        <li>Chaque liste propose une <strong>recherche plein texte</strong>, un filtre par année (registres) et une pagination de 25 lignes ; les filtres restent actifs d'une page à l'autre.</li>
-        <li><strong>« Exporter CSV »</strong> télécharge un fichier Excel (séparateur « ; », accents préservés) qui respecte les filtres en cours — videz la recherche pour tout exporter. Registres, mémoires, suivis, distributions, répartition et synthèses par AG sont exportables.</li>
-        <li><strong>Impression</strong> : Ctrl+P depuis le navigateur — menus et boutons sont automatiquement masqués.</li>
+        <li>Chaque liste dispose d'une <strong>recherche plein texte</strong>, d'un filtre par année (registres) et d'une pagination de 25 lignes. Les filtres restent actifs d'une page à l'autre.</li>
+        <li><strong>Télécharger CSV</strong> produit un fichier compatible Excel (séparateur « ; », accents préservés) qui respecte les filtres en cours. Pour tout exporter, videz d'abord la recherche. Les registres, mémoires, suivis, distributions, répartitions et synthèses par Avocat Général sont exportables.</li>
+        <li><strong>Télécharger PDF</strong> est proposé sur les registres et les mémoires ; les autres pages peuvent être imprimées depuis le navigateur. Le PDF est un document de consultation : les textes longs y sont abrégés et l'export est limité aux <strong>1 000 premières lignes</strong> (la mention figure en bas du document). Pour une extraction exhaustive, utilisez le CSV.</li>
+        <li><strong>Imprimer</strong> : le bouton « Imprimer » ou <kbd>Ctrl</kbd>+<kbd>P</kbd>. Les menus, la recherche et les boutons sont automatiquement masqués à l'impression.</li>
     </ul>
 </div>
 
 <div class="carte">
     <h2 id="faq">Questions fréquentes</h2>
     <ul>
-        <li><strong>Je ne peux pas me connecter.</strong> Vérifiez l'e-mail et le mot de passe. Causes possibles : compte non encore validé, membre à la retraite, session expirée. Au bout d'un échec persistant, contactez le PG ou le SG.</li>
-        <li><strong>Mon mot de passe v1 fonctionne-t-il ici ?</strong> Oui. Les deux applications partagent les comptes. À la première connexion réussie, le mot de passe est automatiquement converti au format sécurisé actuel.</li>
-        <li><strong>Un dossier apparaît dans deux registres ?</strong> Les registres sont indépendants. Un mémoire peut être relié à un dossier pénal et le siège est relié aux dossiers civils ; les fiches affichent ces liaisons.</li>
-        <li><strong>J'ai supprimé un mémoire par erreur.</strong> La suppression ne touche que le registre des mémoires. Il suffit de recréer le mémoire ; en cas de doublon de numéro, choisissez le dossier source précis.</li>
-        <li><strong>Comment imprimer un registre complet ?</strong> Filtrez si besoin, videz la recherche pour tout inclure, exportez en CSV ou imprimez page par page depuis le navigateur.</li>
+        <li><strong>Je ne peux pas me connecter.</strong> Vérifiez l'adresse e-mail et le mot de passe. Causes possibles : compte non encore validé, membre à la retraite, session expirée. Si le problème persiste, contactez le PG ou le SG.</li>
+        <li><strong>Mon mot de passe PGCC v1 fonctionne-t-il ici ?</strong> Oui. Les deux applications partagent les comptes et le mot de passe. À la première connexion réussie, il est converti au format sécurisé actuel.</li>
+        <li><strong>Un dossier apparaît dans deux registres, est-ce normal ?</strong> Oui. Les registres sont indépendants. Un mémoire peut être relié à un dossier pénal, et le registre du Siège est relié aux dossiers civils. Les fiches affichent ces liaisons.</li>
+        <li><strong>J'ai supprimé un mémoire par erreur.</strong> La suppression ne touche que le registre des mémoires. Recréez le mémoire ; en cas de doublon de numéro, choisissez le dossier source précis.</li>
+        <li><strong>Comment imprimer un registre complet ?</strong> Videz la recherche pour inclure tous les dossiers, puis utilisez « Télécharger CSV », « Télécharger PDF » ou l'impression du navigateur.</li>
         <li><strong>Qui contacter pour un accès ?</strong> L'administration du Parquet (postes PG ou SG), via le menu Administration puis Comptes utilisateurs.</li>
     </ul>
     <p><a href="#sommaire">↑ Retour au sommaire</a></p>

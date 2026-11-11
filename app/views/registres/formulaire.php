@@ -51,7 +51,7 @@ $confirmationMessage = $enCreation
     : 'Les modifications du dossier « ' . $referenceDossier . ' » seront enregistrées. Confirmez-vous cette mise à jour ?';
 $confirmationBouton = $enCreation ? 'Ajouter le dossier' : 'Enregistrer les modifications';
 ?>
-<div class="titre-page">
+<div class="titre-page titre-page-formulaire">
     <h1><?= e($titreFormulaire) ?></h1>
     <div class="actions">
         <a class="bouton bouton-secondaire" href="<?= e(url($baseUrl)) ?>">← Retour à la liste</a>
@@ -66,17 +66,20 @@ $confirmationBouton = $enCreation ? 'Ajouter le dossier' : 'Enregistrer les modi
     </div>
 <?php endif; ?>
 
-<div class="carte">
-    <form class="formulaire-registre" method="post"
+<div class="carte carte-formulaire">
+    <form method="post"
           action="<?= e(url($enCreation ? $baseUrl . '/creer' : $baseUrl . '/modifier?id=' . $dossier[$definition['cle']])) ?>"
           data-confirm-title="<?= e($confirmationTitre) ?>"
           data-confirm="<?= e($confirmationMessage) ?>"
           data-confirm-label="<?= e($confirmationBouton) ?>">
         <input type="hidden" name="jeton" value="<?= e(Auth::jeton()) ?>">
+        <input type="hidden" name="version" value="<?= e($version ?? '') ?>">
 
         <?php foreach ($sectionsForm as $section): ?>
-            <fieldset>
-                <legend><?= e($section['libelle']) ?></legend>
+            <section class="form-section">
+                <div class="form-section__entete">
+                    <h2><?= e($section['libelle']) ?></h2>
+                </div>
                 <div class="grille-form">
                     <?php foreach ($section['colonnes'] as $colonne): ?>
                         <?php
@@ -90,11 +93,11 @@ $confirmationBouton = $enCreation ? 'Ajouter le dossier' : 'Enregistrer les modi
                             $valeur = bin_vers_bool($valeur);
                         }
                         $obligatoire = !empty($colonne['requis']);
-                        $champLarge = $colonne['type'] === 'textelong' || !empty($colonne['multiligne']);
+                        $champLarge = $colonne['type'] === 'textelong' || !empty($colonne['multiligne']) || $colonne['type'] === 'dossier_civil';
                         ?>
                         <div class="champ <?= $champLarge ? 'champ-large' : '' ?>">
                             <label for="<?= e($idChamp) ?>">
-                                <?= e($colonne['libelle']) ?><?= $obligatoire ? ' *' : '' ?>
+                                <?= e($colonne['libelle']) ?><?php if ($obligatoire): ?> <span class="etoile-obligatoire" aria-hidden="true">*</span><?php endif; ?>
                             </label>
 
                             <?php if ($colonne['type'] === 'dossier_civil'): ?>
@@ -131,7 +134,7 @@ $confirmationBouton = $enCreation ? 'Ajouter le dossier' : 'Enregistrer les modi
                                        value="<?= e($valeur) ?>"<?= $obligatoire ? ' required' : '' ?>>
                             <?php elseif ($colonne['type'] === 'textelong' || !empty($colonne['multiligne'])): ?>
                                 <textarea id="<?= e($idChamp) ?>" name="<?= e($nom) ?>"
-                                          rows="4"<?= isset($colonne['maxlength']) ? ' maxlength="' . (int) $colonne['maxlength'] . '"' : '' ?><?= $obligatoire ? ' required' : '' ?>><?= e($valeur) ?></textarea>
+                                          rows="2"<?= isset($colonne['maxlength']) ? ' maxlength="' . (int) $colonne['maxlength'] . '"' : '' ?><?= $obligatoire ? ' required' : '' ?>><?= e($valeur) ?></textarea>
                             <?php elseif ($colonne['type'] === 'nombre'): ?>
                                 <input id="<?= e($idChamp) ?>" type="number" name="<?= e($nom) ?>"
                                        value="<?= e($valeur) ?>"<?= $obligatoire ? ' min="1" required' : '' ?>>
@@ -142,7 +145,7 @@ $confirmationBouton = $enCreation ? 'Ajouter le dossier' : 'Enregistrer les modi
                         </div>
                     <?php endforeach; ?>
                 </div>
-            </fieldset>
+            </section>
         <?php endforeach; ?>
 
         <div class="actions-formulaire">

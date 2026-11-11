@@ -43,9 +43,9 @@ final class Graphiques
         }
 
         $couleurs = [
-            'Pénaux' => '#8A4E52',
-            'Civils' => '#43566A',
-            'Arrivées' => '#A57C4B',
+            'Pénaux' => '#1d70b8',
+            'Civils' => '#71717a',
+            'Arrivées' => '#a1a1aa',
         ];
         $echelleY = ($hauteur - $margeH - $margeB) / $maximum;
         $svg = self::ouvrirSvg($largeur, $hauteur, 'Volume de dossiers par année');
@@ -108,8 +108,40 @@ final class Graphiques
         array $civils,
         string $libelleMois
     ): string {
+        return self::barresDeuxSeries(
+            $labels,
+            $penaux,
+            $civils,
+            'Répartition des dossiers pénaux et civils par Avocat Général',
+            'Pénaux',
+            'Civils',
+            $libelleMois,
+            'Aucune distribution enregistrée pour cette période.'
+        );
+    }
+
+    /**
+     * Graphique à barres groupées comparant deux séries numériques
+     * (par exemple dossiers pénaux et civils à conclure, par Avocat
+     * Général). Réutilise le rendu de barresParAg avec titre, légendes
+     * et mention paramétrables.
+     *
+     * @param string[] $labels Étiquettes des groupes (axe X).
+     * @param int[] $serie1 Valeurs de la première série (groupe de gauche).
+     * @param int[] $serie2 Valeurs de la seconde série (groupe de droite).
+     */
+    public static function barresDeuxSeries(
+        array $labels,
+        array $serie1,
+        array $serie2,
+        string $titre,
+        string $libelle1,
+        string $libelle2,
+        string $mention,
+        string $messageVide = 'Aucune donnée à afficher.'
+    ): string {
         if ($labels === []) {
-            return '<p class="graphique-vide">Aucune distribution enregistrée pour cette période.</p>';
+            return '<p class="graphique-vide">' . self::echapper($messageVide) . '</p>';
         }
 
         $nb = count($labels);
@@ -122,7 +154,7 @@ final class Graphiques
         $largeurGroupe = ($largeur - $margeG - $margeD) / $nb;
         $maximum = 1;
 
-        foreach ([$penaux, $civils] as $valeurs) {
+        foreach ([$serie1, $serie2] as $valeurs) {
             foreach ($valeurs as $valeur) {
                 $maximum = max($maximum, (int) $valeur);
             }
@@ -130,11 +162,7 @@ final class Graphiques
 
         $echelleY = ($hauteur - $margeH - $margeB) / $maximum;
         $largeurBarre = $largeurGroupe / 3;
-        $svg = self::ouvrirSvg(
-            $largeur,
-            $hauteur,
-            'Répartition des dossiers pénaux et civils par Avocat Général'
-        );
+        $svg = self::ouvrirSvg($largeur, $hauteur, $titre);
 
         for ($g = 0; $g <= 4; $g++) {
             $valeur = (int) round($maximum * $g / 4);
@@ -147,22 +175,22 @@ final class Graphiques
 
         foreach ($labels as $i => $sigle) {
             $xGroupe = $margeG + $i * $largeurGroupe;
-            $valeurPenale = max(0, (int) ($penaux[$i] ?? 0));
-            $valeurCivile = max(0, (int) ($civils[$i] ?? 0));
+            $valeur1 = max(0, (int) ($serie1[$i] ?? 0));
+            $valeur2 = max(0, (int) ($serie2[$i] ?? 0));
 
             foreach (
                 [
-                    [$valeurPenale, '#8A4E52', 0.5, 'Pénaux'],
-                    [$valeurCivile, '#43566A', 1.5, 'Civils'],
+                    [$valeur1, '#1d70b8', 0.5, $libelle1],
+                    [$valeur2, '#a1a1aa', 1.5, $libelle2],
                 ] as [$valeur, $couleur, $positionBarre, $type]
             ) {
                 $hauteurBarre = $valeur * $echelleY;
-                $titre = self::echapper($type . ' ' . (string) $sigle . ' : ' . $valeur);
+                $titreBarre = self::echapper($type . ' ' . (string) $sigle . ' : ' . $valeur);
                 $svg .= '<rect x="' . round($xGroupe + $largeurBarre * $positionBarre, 1)
                       . '" y="' . round($hauteur - $margeB - $hauteurBarre, 1)
                       . '" width="' . round($largeurBarre * 0.82, 1)
                       . '" height="' . round($hauteurBarre, 1)
-                      . '" fill="' . $couleur . '" rx="3"><title>' . $titre . '</title></rect>';
+                      . '" fill="' . $couleur . '" rx="3"><title>' . $titreBarre . '</title></rect>';
             }
 
             $svg .= '<text x="' . ($xGroupe + $largeurGroupe / 2) . '" y="' . ($hauteur - 16)
@@ -170,12 +198,16 @@ final class Graphiques
                   . self::echapper((string) $sigle) . '</text>';
         }
 
-        $svg .= '<rect x="' . $margeG . '" y="14" width="14" height="14" fill="#8A4E52" rx="3"/>'
-              . '<text x="' . ($margeG + 21) . '" y="26" font-size="14" fill="#323A44">Pénaux</text>'
-              . '<rect x="' . ($margeG + 116) . '" y="14" width="14" height="14" fill="#43566A" rx="3"/>'
-              . '<text x="' . ($margeG + 137) . '" y="26" font-size="14" fill="#323A44">Civils</text>'
+        // Légende : la seconde entrée suit la largeur réelle du premier
+        // libellé (des libellés longs se suivent sans se chevaucher).
+        $largeurLegende1 = max(130, strlen($libelle1) * 8 + 38);
+        $xLegende2 = $margeG + $largeurLegende1;
+        $svg .= '<rect x="' . $margeG . '" y="14" width="14" height="14" fill="#1d70b8" rx="3"/>'
+              . '<text x="' . ($margeG + 21) . '" y="26" font-size="14" fill="#323A44">' . self::echapper($libelle1) . '</text>'
+              . '<rect x="' . $xLegende2 . '" y="14" width="14" height="14" fill="#a1a1aa" rx="3"/>'
+              . '<text x="' . ($xLegende2 + 21) . '" y="26" font-size="14" fill="#323A44">' . self::echapper($libelle2) . '</text>'
               . '<text x="' . ($largeur - $margeD) . '" y="26" text-anchor="end" '
-              . 'font-size="14" fill="#5F6A75">' . self::echapper($libelleMois) . '</text>';
+              . 'font-size="14" fill="#5F6A75">' . self::echapper($mention) . '</text>';
 
         return $svg . '</svg></div>';
     }

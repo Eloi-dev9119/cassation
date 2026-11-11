@@ -13,7 +13,7 @@ $action = $creation
     ? url('/administration/comptes/creer')
     : url('/administration/comptes/modifier?id=' . (int) ($compte['id_client'] ?? 0));
 ?>
-<div class="titre-page">
+<div class="titre-page titre-page-formulaire">
     <h1><?= $creation ? 'Créer un compte' : 'Modifier un compte' ?></h1>
     <div class="actions">
         <a class="bouton bouton-secondaire" href="<?= e(url('/administration/comptes')) ?>">← Comptes utilisateurs</a>
@@ -31,7 +31,7 @@ $action = $creation
     </div>
 <?php endif; ?>
 
-<div class="carte">
+<div class="carte carte-formulaire">
     <h2><?= $creation ? 'Informations du nouveau compte' : 'Informations du compte' ?></h2>
     <form method="post" action="<?= e($action) ?>"
           data-confirm-title="<?= $creation ? 'Créer le compte' : 'Enregistrer les modifications' ?>"
@@ -43,11 +43,11 @@ $action = $creation
 
         <div class="grille-form">
             <div class="champ">
-                <label for="nom">Nom <span aria-hidden="true">*</span></label>
+                <label for="nom">Nom <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="text" id="nom" name="nom" value="<?= e($valeur('nom')) ?>" required autocomplete="family-name">
             </div>
             <div class="champ">
-                <label for="prenom">Prénom <span aria-hidden="true">*</span></label>
+                <label for="prenom">Prénom <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="text" id="prenom" name="prenom" value="<?= e($valeur('prenom')) ?>" required autocomplete="given-name">
             </div>
             <div class="champ">
@@ -58,7 +58,7 @@ $action = $creation
                 </select>
             </div>
             <div class="champ">
-                <label for="email">Adresse e-mail (identifiant) <span aria-hidden="true">*</span></label>
+                <label for="email">Adresse e-mail (identifiant) <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="email" id="email" name="email" value="<?= e($valeur('login')) ?>" required autocomplete="email">
             </div>
             <div class="champ">
@@ -77,7 +77,7 @@ $action = $creation
                 <input type="text" id="sigleAG" name="sigleAG" value="<?= e($valeur('sigle_AG')) ?>" maxlength="20">
             </div>
             <div class="champ">
-                <label for="matricule">Matricule <span aria-hidden="true">*</span></label>
+                <label for="matricule">Matricule <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="number" id="matricule" name="matricule" value="<?= e($valeur('IM')) ?>" required min="0">
             </div>
             <div class="champ">
@@ -93,11 +93,11 @@ $action = $creation
             </div>
             <?php if ($creation): ?>
                 <div class="champ">
-                    <label for="motDePasse">Mot de passe <span aria-hidden="true">*</span></label>
+                    <label for="motDePasse">Mot de passe <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                     <input type="password" id="motDePasse" name="motDePasse" required minlength="4" autocomplete="new-password">
                 </div>
                 <div class="champ">
-                    <label for="confirmation">Confirmation du mot de passe <span aria-hidden="true">*</span></label>
+                    <label for="confirmation">Confirmation du mot de passe <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                     <input type="password" id="confirmation" name="confirmation" required minlength="4" autocomplete="new-password">
                 </div>
             <?php endif; ?>

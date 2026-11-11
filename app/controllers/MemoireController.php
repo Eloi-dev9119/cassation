@@ -10,6 +10,9 @@ declare(strict_types=1);
 
 final class MemoireController
 {
+    /** Vrai quand le mémoire a été enregistré sans dossier source (liaison différée). */
+    private bool $liaisonDifferee = false;
+
     public function dispatch(array $route): void
     {
         Auth::exiger();
@@ -38,28 +41,66 @@ final class MemoireController
         $etat      = $etatBrut !== '' ? $etatBrut : null;
 
         $modele = new MemoireModel();
+        $colonnesExport = [
+            ['champ' => 'num_ordre', 'libelle' => 'N° ordre'],
+            ['champ' => 'annee', 'libelle' => 'Année'],
+            ['champ' => 'type_memoire', 'libelle' => 'Type', 'valeurs' => self::libellesMemoire()],
+            ['champ' => 'origine', 'libelle' => 'Origine', 'valeurs' => MemoireModel::ORIGINES],
+            ['champ' => 'num_dossier_PGCS', 'libelle' => 'N° dossier PGCS'],
+            ['champ' => 'parties', 'libelle' => 'Pièces'],
+            ['champ' => 'avocat', 'libelle' => 'Déposant'],
+            ['champ' => 'juridiction', 'libelle' => 'Juridiction'],
+            ['champ' => 'date_depot', 'libelle' => 'Date de dépôt', 'type' => 'date'],
+            ['champ' => 'etat', 'libelle' => 'État', 'valeurs' => MemoireModel::ETATS],
+        ];
         if (entree_get('export', '') === 'csv') {
-            CsvExporter::telecharger('memoires-' . date('Ymd') . '.csv', [
-                ['champ' => 'num_ordre', 'libelle' => 'N° ordre'],
+            CsvExporter::telecharger('memoires-' . date('Ymd') . '.csv', $colonnesExport, $modele->exporter($recherche, $type, $etat));
+        }
+        if (entree_get('export', '') === 'pdf') {
+            // Le PDF traduit les codes techniques en libellés lisibles.
+            $libelles = [
+                'type_memoire' => self::libellesMemoire(),
+                'origine' => MemoireModel::ORIGINES,
+                'etat' => MemoireModel::ETATS,
+            ];
+            // MemoireModel::exporter() renvoie un PDOStatement (parcours
+            // direct, sans buffer) : on le traverse avec un générateur.
+            // array_map() exigerait un tableau et levait une TypeError.
+            $lignesPdf = (static function (iterable $source) use ($libelles): Generator {
+                foreach ($source as $ligne) {
+                    foreach ($libelles as $champ => $table) {
+                        if (isset($ligne[$champ], $table[$ligne[$champ]])) {
+                            $ligne[$champ] = $table[$ligne[$champ]];
+                        }
+                    }
+                    yield $ligne;
+                }
+            })($modele->exporter($recherche, $type, $etat));
+            PdfExporter::telechargerTableau('memoires-' . date('Ymd') . '.pdf', 'Registre des Mémoires', [
+                ['champ' => 'num_ordre', 'libelle' => 'N°'],
                 ['champ' => 'annee', 'libelle' => 'Année'],
-                ['champ' => 'type_memoire', 'libelle' => 'Type', 'valeurs' => self::libellesMemoire()],
-                ['champ' => 'origine', 'libelle' => 'Origine', 'valeurs' => MemoireModel::ORIGINES],
-                ['champ' => 'num_dossier_PGCS', 'libelle' => 'N° dossier PGCS'],
+                ['champ' => 'type_memoire', 'libelle' => 'Type'],
+                ['champ' => 'origine', 'libelle' => 'Origine'],
+                ['champ' => 'num_dossier_PGCS', 'libelle' => 'N° dossier'],
                 ['champ' => 'parties', 'libelle' => 'Pièces'],
                 ['champ' => 'avocat', 'libelle' => 'Déposant'],
                 ['champ' => 'juridiction', 'libelle' => 'Juridiction'],
-                ['champ' => 'date_depot', 'libelle' => 'Date de dépôt', 'type' => 'date'],
-                ['champ' => 'etat', 'libelle' => 'État', 'valeurs' => MemoireModel::ETATS],
-            ], $modele->exporter($recherche, $type, $etat));
+                ['champ' => 'date_depot', 'libelle' => 'Dépôt'],
+                ['champ' => 'etat', 'libelle' => 'État'],
+            ], $lignesPdf);
         }
         $resultat = $modele->liste($page, $recherche, $type, $etat);
 
+        // Vue complète : tout le contenu des colonnes longues affiché.
+        $vueComplete = entree_get('vue', '') === 'complet';
+
         View::afficher('memoires/liste.php', [
-            'titrePage' => 'Registre des Mémoires — ' . APP_NOM,
-            'resultat'  => $resultat,
-            'recherche' => $recherche,
-            'type'      => $type,
-            'etat'      => $etat,
+            'titrePage'   => 'Registre des Mémoires — ' . APP_NOM,
+            'resultat'    => $resultat,
+            'recherche'   => $recherche,
+            'type'        => $type,
+            'etat'        => $etat,
+            'vueComplete' => $vueComplete,
         ]);
     }
 
@@ -109,18 +150,54 @@ final class MemoireController
                 : [];
             $donnees = $this->lireFormulaire($erreurs, (bool) $memoire, $memoire);
 
+            // Édition concurrente : refus si le mémoire a changé en base
+            // depuis l'ouverture du formulaire (version = date_modification).
+            if ($memoire !== null) {
+                $versionRecue = (string) entree_post('version', '');
+                $versionActuelle = (string) ($memoire['date_modification'] ?? '');
+                if ($versionRecue !== $versionActuelle) {
+                    $erreurs[] = 'Ce mémoire a été modifié entre-temps'
+                        . (!empty($memoire['modifie_par']) ? ' par ' . $memoire['modifie_par'] : '')
+                        . ' — la fiche affichée était périmée. Rechargez-la puis ressaisissez vos modifications.';
+                }
+            }
+
             if ($erreurs === []) {
+                $numero = $donnees['num_ordre'] . '/' . $donnees['annee'];
+                $complement = $this->liaisonDifferee
+                    ? ' Aucun dossier « ' . $donnees['num_dossier_PGCS'] . ' » au registre correspondant : la liaison se fera automatiquement dès sa création.'
+                    : '';
                 if ($memoire === null) {
                     $modele->inserer($donnees);
-                    flash('succes', 'Le mémoire a été enregistré.');
+                    flash(
+                        'succes',
+                        'Le mémoire n° ' . $numero . ' a bien été enregistré dans le registre.' . $complement,
+                        'Mémoire enregistré'
+                    );
                 } else {
                     // La date d'insertion historique est préservée en
                     // modification (elle marque l'entrée du mémoire au registre).
                     $donnees['date_insertion'] = $memoire['date_insertion'] ?? $donnees['date_insertion'];
                     $modele->modifier($id, $donnees);
-                    flash('succes', 'Le mémoire a été mis à jour.');
+                    flash(
+                        'succes',
+                        'Le mémoire n° ' . $numero . ' a bien été mis à jour.' . $complement,
+                        'Mémoire mis à jour'
+                    );
                 }
                 rediriger('/memoires');
+            }
+        }
+
+        // Pièces jointes (mémoire signé, pièces de procédure) : uniquement
+        // en modification — un nouveau mémoire n'a pas encore d'identifiant.
+        // Table absente (migration non exécutée) → null, bloc discret.
+        $pieces = null;
+        if ($memoire !== null) {
+            try {
+                $pieces = (new PieceModel())->pourEntite('memoire', (int) $memoire['id_memoire']);
+            } catch (Throwable) {
+                // pgcc_pieces_jointes absente — dégradation silencieuse.
             }
         }
 
@@ -133,6 +210,8 @@ final class MemoireController
             'idDossierSourceSelectionne' => $idDossierSourceSelectionne,
             'dossiersCorrespondants' => $dossiersCorrespondants,
             'valeursFormulaire' => $valeursFormulaire,
+            'pieces'    => $pieces,
+            'version'   => $memoire !== null ? (string) ($memoire['date_modification'] ?? '') : '',
         ]);
     }
 
@@ -230,10 +309,16 @@ final class MemoireController
             }
             if (($idDossierSource === null || $idDossierSource < 1) && !$erreurChoixSource) {
                 $candidats = $modeleMemoire->dossiersCorrespondants($d['origine'], $d['num_dossier_PGCS']);
-                $erreurs[] = count($candidats) > 1
-                    ? 'Plusieurs dossiers portent ce numéro. Sélectionnez le dossier précis dans la liste.'
-                    : 'Aucun dossier unique ne correspond à cette origine et à ce numéro. Vérifiez le registre et le numéro PGCS.';
-                $idDossierSource = null;
+                if (count($candidats) > 1) {
+                    $erreurs[] = 'Plusieurs dossiers portent ce numéro. Sélectionnez le dossier précis dans la liste.';
+                } else {
+                    // Liaison différée : le dossier n'existe pas encore au
+                    // registre correspondant. Le mémoire est enregistré sans
+                    // liaison ; elle se fera automatiquement dès la création
+                    // du dossier (RegistreController → lierDossiersManquants).
+                    $idDossierSource = null;
+                    $this->liaisonDifferee = true;
+                }
             }
         }
         $d['id_reg_pourvoi_pen'] = $d['origine'] === 'penal' ? $idDossierSource : null;

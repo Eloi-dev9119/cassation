@@ -238,6 +238,7 @@ final class AdministrationModel
             ['Pourvois pénaux', 'pgcc_reg_pourvoi_pen', 'num_dossier_PGCS'],
             ['Pourvois civils', 'pgcc_reg_pourvoi_civ', 'num_dossier_PGCS'],
             ['Dessaisissements', 'pgcc_reg_des', 'num_dossier_PGCS'],
+            ['Registres PIL', 'pgcc_reg_pil', 'num_pil'],
             ['Mémoires', 'pgcc_reg_memoires', 'num_dossier_PGCS'],
             ['Suivis 321', 'pgcc_suivi_arrivee', 'num_dossier_PGCS'],
             ['Suivis 107', 'pgcc_suivi_pen', 'num_dossier_PGCS'],

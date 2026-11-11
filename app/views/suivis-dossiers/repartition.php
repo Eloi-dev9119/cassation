@@ -13,15 +13,15 @@
 </div>
 
 <div class="carte">
-    <form method="get" action="<?= e(url('/repartition')) ?>" class="filtres" style="margin-bottom:0">
+    <form method="get" action="<?= e(url('/repartition')) ?>" class="filtres" style="margin-bottom:0" data-auto-filtre>
         <input type="hidden" name="r" value="/repartition">
-        <label style="margin:0;font-weight:600;color:var(--ardoise)">Mois :</label>
+        <label>Mois :</label>
         <select name="mois">
             <?php foreach ($mois as $m): ?>
                 <option value="<?= e($m) ?>" <?= $moisChoisi === $m ? 'selected' : '' ?>><?= e($m) ?></option>
             <?php endforeach; ?>
         </select>
-        <label style="margin:0;font-weight:600;color:var(--ardoise)">Année :</label>
+        <label>Année :</label>
         <input type="number" name="annee" min="1990" max="2100" value="<?= (int) $annee ?>" style="width:90px">
         <button type="submit" class="bouton">Afficher</button>
         <span class="compte">Le rattachement au mois se fait par le nom de la liste de distribution.</span>
@@ -36,7 +36,7 @@
 <div class="carte">
     <h2>Tableau de répartition — <?= e($moisChoisi) ?> <?= (int) $annee ?></h2>
     <?php if ($donnees['ags'] === []): ?>
-        <p style="color:var(--gris)">Aucune distribution enregistrée.</p>
+        <p class="texte-doux">Aucune distribution enregistrée.</p>
     <?php else: ?>
         <div class="tableau-enveloppe">
             <table class="liste">

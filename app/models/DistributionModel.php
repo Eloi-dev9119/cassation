@@ -111,6 +111,37 @@ final class DistributionModel
     }
 
     /**
+     * Lit une distribution en vue de sa modification, ou null si absente.
+     */
+    public function lire(int $id): ?array
+    {
+        $req = Database::connexion()->prepare(
+            'SELECT * FROM pgcc_distribution_pg WHERE id_distribution = :id'
+        );
+        $req->execute(['id' => $id]);
+        $ligne = $req->fetch();
+        return $ligne === false ? null : $ligne;
+    }
+
+    /**
+     * Enregistre la modification d'une distribution (année, liste,
+     * parties, sigle et dates de remise) — traçée dans modifie_par.
+     * @param array $donnees colonne => valeur (déjà validées par le contrôleur)
+     */
+    public function modifier(int $id, array $donnees): bool
+    {
+        $donnees['modifie_par'] = utilisateur_login();
+        $affectations = implode(', ', array_map(
+            fn (string $c): string => nom_sql($c) . ' = :' . $c,
+            array_keys($donnees)
+        ));
+        $req = Database::connexion()->prepare(
+            'UPDATE pgcc_distribution_pg SET ' . $affectations . ' WHERE id_distribution = :id'
+        );
+        return $req->execute($donnees + ['id' => $id]);
+    }
+
+    /**
      * Crée une liste de distribution : un enregistrement par dossier
      * sélectionné, avec le type de dossier correspondant ('pen' ou 'civ').
      * Retourne le nombre de dossiers ajoutés.

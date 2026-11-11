@@ -90,29 +90,34 @@ final class MemoireModel
 
     public function liste(int $page = 1, string $recherche = '', ?string $type = null, ?string $etat = null): array
     {
-        $bdd     = Database::connexion();
-        $where   = [];
-        $params  = [];
+        $bdd = Database::connexion();
 
+        [$whereTypeEtat, $paramsFiltres] = $this->conditionsTypeEtat($type, $etat);
         $recherche = trim($recherche);
-        if ($recherche !== '') {
-            $where[] = '(num_dossier_PGCS LIKE :q1 OR parties LIKE :q2 OR avocat LIKE :q3 OR juridiction LIKE :q4)';
-            $params += ['q1' => "%$recherche%", 'q2' => "%$recherche%", 'q3' => "%$recherche%", 'q4' => "%$recherche%"];
-        }
-        if ($type !== null && isset(self::TYPES[$type])) {
-            $where[]            = 'type_memoire = :type';
-            $params['type']     = $type;
-        }
-        if ($etat !== null && isset(self::ETATS[$etat])) {
-            $where[]            = 'etat = :etat';
-            $params['etat']     = $etat;
-        }
+        $utiliseFulltext = mb_strlen($recherche) >= 3;
 
-        $condition = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+        $conditions = function (bool $fulltext) use ($recherche, $whereTypeEtat, &$paramsFiltres): array {
+            [$whereRecherche, $paramsRecherche] = $this->conditionsTexte($recherche, $fulltext);
+            return [array_merge([$whereRecherche], $whereTypeEtat), array_merge($paramsRecherche, $paramsFiltres)];
+        };
 
-        $req = $bdd->prepare('SELECT COUNT(*) FROM pgcc_reg_memoires' . $condition);
-        $req->execute($params);
-        $total = (int) $req->fetchColumn();
+        [$where, $params] = $conditions($utiliseFulltext);
+        $condition = $where ? ' WHERE ' . implode(' AND ', array_filter($where)) : '';
+
+        // Le repli LIKE ne peut être déclenché qu'à l'exécution (l'index
+        // FULLTEXT peut manquer si la migration n'a pas été exécutée).
+        try {
+            $req = $bdd->prepare('SELECT COUNT(*) FROM pgcc_reg_memoires' . $condition);
+            $req->execute($params);
+            $total = (int) $req->fetchColumn();
+        } catch (PDOException $e) {
+            if (!$utiliseFulltext) { throw $e; }
+            [$where, $params] = $conditions(false);
+            $condition = $where ? ' WHERE ' . implode(' AND ', array_filter($where)) : '';
+            $req = $bdd->prepare('SELECT COUNT(*) FROM pgcc_reg_memoires' . $condition);
+            $req->execute($params);
+            $total = (int) $req->fetchColumn();
+        }
 
         $pages  = max(1, (int) ceil($total / LIGNES_PAR_PAGE));
         $page   = min(max(1, $page), $pages);
@@ -130,13 +135,42 @@ final class MemoireModel
     /** Toutes les lignes correspondant aux filtres pour produire un export complet. */
     public function exporter(string $recherche = '', ?string $type = null, ?string $etat = null): iterable
     {
+        [$whereTypeEtat, $paramsFiltres] = $this->conditionsTypeEtat($type, $etat);
+        $recherche = trim($recherche);
+        $utiliseFulltext = mb_strlen($recherche) >= 3;
+
+        [$whereRecherche, $paramsRecherche] = $this->conditionsTexte($recherche, $utiliseFulltext);
+        $where = array_merge([$whereRecherche], $whereTypeEtat);
+        $params = array_merge($paramsRecherche, $paramsFiltres);
+        $condition = '';
+        if (array_filter($where) !== []) {
+            $condition = ' WHERE ' . implode(' AND ', array_filter($where));
+        }
+
+        try {
+            $req = Database::connexionPourExport()->prepare(
+                'SELECT * FROM pgcc_reg_memoires' . $condition . ' ORDER BY annee DESC, num_ordre DESC'
+            );
+            $req->execute($params);
+        } catch (PDOException $e) {
+            if (!$utiliseFulltext) { throw $e; }
+            [$whereRecherche, $paramsRecherche] = $this->conditionsTexte($recherche, false);
+            $where = array_merge([$whereRecherche], $whereTypeEtat);
+            $condition = array_filter($where) !== []
+                ? ' WHERE ' . implode(' AND ', array_filter($where)) : '';
+            $req = Database::connexionPourExport()->prepare(
+                'SELECT * FROM pgcc_reg_memoires' . $condition . ' ORDER BY annee DESC, num_ordre DESC'
+            );
+            $req->execute(array_merge($paramsRecherche, $paramsFiltres));
+        }
+        return $req;
+    }
+
+    /** Conditions type/état communes à liste() et exporter(). */
+    private function conditionsTypeEtat(?string $type, ?string $etat): array
+    {
         $where = [];
         $params = [];
-        $recherche = trim($recherche);
-        if ($recherche !== '') {
-            $where[] = '(num_dossier_PGCS LIKE :q1 OR parties LIKE :q2 OR avocat LIKE :q3 OR juridiction LIKE :q4)';
-            $params += ['q1' => "%$recherche%", 'q2' => "%$recherche%", 'q3' => "%$recherche%", 'q4' => "%$recherche%"];
-        }
         if ($type !== null && isset(self::TYPES[$type])) {
             $where[] = 'type_memoire = :type';
             $params['type'] = $type;
@@ -145,12 +179,25 @@ final class MemoireModel
             $where[] = 'etat = :etat';
             $params['etat'] = $etat;
         }
-        $condition = $where ? ' WHERE ' . implode(' AND ', $where) : '';
-        $req = Database::connexionPourExport()->prepare(
-            'SELECT * FROM pgcc_reg_memoires' . $condition . ' ORDER BY annee DESC, num_ordre DESC'
-        );
-        $req->execute($params);
-        return $req;
+        return [$where, $params];
+    }
+
+    /**
+     * Condition de recherche textuelle : plein texte (index FULLTEXT,
+     * rapide sur les gros volumes) ou LIKE si l'index est indisponible ou
+     * la saisie trop courte pour les jetons InnoDB (3 caractères minimum).
+     */
+    private function conditionsTexte(string $recherche, bool $fulltext): array
+    {
+        if ($recherche === '') {
+            return ['1', []];
+        }
+        if ($fulltext) {
+            return ['MATCH (num_dossier_PGCS, parties, avocat, juridiction, observation) AGAINST (:qft IN BOOLEAN MODE)',
+                ['qft' => $recherche]];
+        }
+        return ['(num_dossier_PGCS LIKE :q1 OR parties LIKE :q2 OR avocat LIKE :q3 OR juridiction LIKE :q4 OR observation LIKE :q5)',
+            ['q1' => "%$recherche%", 'q2' => "%$recherche%", 'q3' => "%$recherche%", 'q4' => "%$recherche%", 'q5' => "%$recherche%"]];
     }
 
     public function trouver(int $id): ?array
@@ -177,6 +224,69 @@ final class MemoireModel
             . nom_sql($colonne) . " = :id ORDER BY date_depot DESC");
         $req->execute(['id' => $idDossier]);
         return $req->fetchAll();
+    }
+
+    /**
+     * Compte les mémoires reliés pour une série de dossiers source.
+     * Utilisé par la liste des registres pour afficher l'indicateur
+     * « Mémoires » sans une requête par ligne.
+     *
+     * @param int[] $idsDossiers
+     * @return array<int, int> identifiant du dossier => nombre de mémoires
+     */
+    public function compterParDossier(string $origine, array $idsDossiers): array
+    {
+        $colonne = match ($origine) {
+            'penal' => 'id_reg_pourvoi_pen',
+            'civil' => 'id_reg_pourvoi_civ',
+            default => null,
+        };
+        $ids = array_values(array_unique(array_filter(
+            array_map('intval', $idsDossiers),
+            static fn (int $id): bool => $id > 0
+        )));
+        if ($colonne === null || $ids === []) {
+            return [];
+        }
+
+        // Identifiants entiers validés : l'interpolation des marqueurs « ? »
+        // est sûre (aucune donnée utilisateur brute n'est concaténée).
+        $marqueurs = implode(', ', array_fill(0, count($ids), '?'));
+        $req = Database::connexion()->prepare(
+            'SELECT ' . nom_sql($colonne) . ' AS id_dossier, COUNT(*) AS total
+             FROM pgcc_reg_memoires
+             WHERE ' . nom_sql($colonne) . ' IN (' . $marqueurs . ')
+             GROUP BY ' . nom_sql($colonne)
+        );
+        $req->execute($ids);
+
+        $compteurs = [];
+        foreach ($req->fetchAll() as $ligne) {
+            $compteurs[(int) $ligne['id_dossier']] = (int) $ligne['total'];
+        }
+        return $compteurs;
+    }
+
+    /**
+     * Liaison différée : rattache les mémoires restés sans dossier source
+     * dès qu'un dossier du registre porte enfin leur numéro. Appelé à la
+     * création d'un dossier ; retourne le nombre de mémoires reliés.
+     */
+    public function lierDossiersManquants(string $origine, string $numDossier, int $idDossier): int
+    {
+        $colonne = match ($origine) {
+            'penal' => 'id_reg_pourvoi_pen',
+            'civil' => 'id_reg_pourvoi_civ',
+            default => null,
+        };
+        if ($colonne === null || $numDossier === '' || $idDossier < 1) return 0;
+
+        $req = Database::connexion()->prepare(
+            'UPDATE pgcc_reg_memoires SET ' . nom_sql($colonne) . ' = :id
+             WHERE origine = :origine AND num_dossier_PGCS = :num AND ' . nom_sql($colonne) . ' IS NULL'
+        );
+        $req->execute(['id' => $idDossier, 'origine' => $origine, 'num' => $numDossier]);
+        return $req->rowCount();
     }
 
     public function inserer(array $d): int

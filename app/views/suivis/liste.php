@@ -1,9 +1,12 @@
 <?php
 /**
- * Liste d'un suivi (321 ou 107). Variables : $type, $resultat, $recherche.
+ * Liste d'un suivi (321 ou 107). Variables : $type, $resultat, $recherche,
+ * $vueComplete.
  */
+$vueComplete = $vueComplete ?? false;
 $def = SuiviModel::definition($type);
 $baseUrl = '/suivis/' . $type; // route interne brute, passée dans url() à l'affichage
+$parametresVue = array_filter(['q' => $recherche, 'vue' => $vueComplete ? null : 'complet']);
 ?>
 <div class="titre-page">
     <h1><?= e($def['libelle']) ?></h1>
@@ -14,31 +17,40 @@ $baseUrl = '/suivis/' . $type; // route interne brute, passée dans url() à l'a
         <a class="bouton bouton-secondaire" href="<?= e(url('/suivis/' . ($type === '321' ? '107' : '321'))) ?>">
             Voir l'autre suivi
         </a>
+        <a class="bouton bouton-secondaire" href="<?= e(url('/suivis-dossiers')) ?>">Synthèse des dossiers</a>
+        <a class="bouton bouton-secondaire" href="<?= e(url('/repartition')) ?>">Répartition</a>
+        <a class="bouton bouton-secondaire" href="<?= e(url($baseUrl . '?' . http_build_query($parametresVue))) ?>"
+           title="Basculer entre le contenu tronqué et tout le contenu de chaque suivi">
+            <?= $vueComplete ? 'Vue compacte' : 'Voir tout le contenu' ?>
+        </a>
     </div>
 </div>
 
-<div class="carte" style="padding:0;border:none;background:transparent">
-    <?php $actionFiltre = url($baseUrl); $routeFiltre = $baseUrl; $parametresSup = []; ?>
+<div class="barre-filtres">
+    <?php $actionFiltre = url($baseUrl); $routeFiltre = $baseUrl; $parametresSup = $vueComplete ? ['vue' => 'complet'] : []; ?>
     <?php require APP_CHEMIN . '/app/views/partiels/filtres.php'; ?>
 </div>
 
 <div class="tableau-enveloppe">
-    <table class="liste">
+    <table class="liste<?= $vueComplete ? ' vue-complete' : '' ?>">
         <thead>
         <tr>
             <?php if ($type === '321'): ?>
-                <th>N° ordre</th><th>Année</th><th>Arrivée</th><th>N° dossier PGCS</th>
-                <th>Détention</th><th>Date détention</th><th>Sigle AG</th><th>Localisation</th><th>Observation</th>
+                <th>N° ordre</th><th>Année</th><th>Date d'arrivée (+ B.E)</th><th>Dossier N°</th>
+                <th>Détention</th><th>Date détention</th><th>AG instructeur</th><th>Localisation</th><th>Observation de suivi</th>
                 <th style="width:110px">Actions</th>
             <?php else: ?>
-                <th>N° ordre</th><th>Année</th><th>Transm. PGCS</th><th>Réception</th><th>N° dossier PGCS</th>
-                <th>Détention</th><th>Sigle AG</th><th>Transmission</th><th>Observation</th><th style="width:110px">Actions</th>
+                <th>N° ordre</th><th>Année</th><th>Date de transmission</th><th>Date de réception</th><th>Dossier N°</th>
+                <th>Détention</th><th>AG instructeur</th><th>Transmission</th><th>Observation de suivi</th><th style="width:110px">Actions</th>
             <?php endif; ?>
         </tr>
         </thead>
         <tbody>
             <?php if ($resultat['lignes'] === []): ?>
-                <tr><td colspan="10" style="text-align:center;color:var(--gris);padding:26px">Aucun suivi ne correspond aux critères.</td></tr>
+                <tr><td colspan="10" class="etat-vide">
+                    <strong>Aucun suivi enregistré</strong>
+                    Aucun suivi ne correspond aux critères de recherche.
+                </td></tr>
             <?php endif; ?>
             <?php foreach ($resultat['lignes'] as $ligne): ?>
                 <tr>
@@ -52,7 +64,8 @@ $baseUrl = '/suivis/' . $type; // route interne brute, passée dans url() à l'a
                         <td><?= e($ligne['sigle_AG'] ?? '—') ?></td>
                         <td><?= e($ligne['localisation'] ?? '—') ?></td>
                         <td class="rogne"><?= e($ligne['observation_suivi'] ?? '—') ?></td>
-                        <td>
+                        <td class="cellule-actions">
+                            <a class="bouton bouton-mini bouton-secondaire" href="<?= e(url($baseUrl . '/modifier?id=' . (int) $ligne['id_suivi_arrivee'])) ?>">Modifier</a>
                             <form method="post" action="<?= e(url($baseUrl . '/archiver')) ?>" style="display:inline"
                                   data-confirm-title="<?= bin_vers_bool($ligne['archiver'] ?? null) ? 'Désarchiver le suivi' : 'Archiver le suivi' ?>"
                                   data-confirm="<?= bin_vers_bool($ligne['archiver'] ?? null) ? 'Le suivi sera réintégré dans la liste active. Confirmez-vous le désarchivage ?' : 'Le suivi sera archivé et restera conservé. Confirmez-vous son archivage ?' ?>"
@@ -72,7 +85,8 @@ $baseUrl = '/suivis/' . $type; // route interne brute, passée dans url() à l'a
                         <td><?= e($ligne['sigle_AG'] ?? '—') ?></td>
                         <td><?= e(date_fr($ligne['date_transmission'] ?? null)) ?></td>
                         <td class="rogne"><?= e($ligne['observation'] ?? '—') ?></td>
-                        <td>
+                        <td class="cellule-actions">
+                            <a class="bouton bouton-mini bouton-secondaire" href="<?= e(url($baseUrl . '/modifier?id=' . (int) $ligne['id_suivi_arrivee'])) ?>">Modifier</a>
                             <form method="post" action="<?= e(url($baseUrl . '/archiver')) ?>" style="display:inline"
                                   data-confirm="<?= bin_vers_bool($ligne['archiver'] ?? null) ? 'Confirmer le d&eacute;sarchivage de ce suivi ?' : 'Confirmer l&#39;archivage de ce suivi ?' ?>">
                                 <input type="hidden" name="jeton" value="<?= e(Auth::jeton()) ?>">
@@ -91,7 +105,7 @@ $baseUrl = '/suivis/' . $type; // route interne brute, passée dans url() à l'a
 
 <?php
 $urlBase = $baseUrl;
-$query   = http_build_query(array_filter(['q' => $recherche]));
+$query   = http_build_query(array_filter(['q' => $recherche, 'vue' => $vueComplete ? 'complet' : null]));
 $parametres = $query !== '' ? $query . '&' : '';
 require APP_CHEMIN . '/app/views/partiels/pagination.php';
 ?>

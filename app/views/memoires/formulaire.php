@@ -18,7 +18,7 @@ $confirmationMessage = $enCreation
     : 'Les modifications du mémoire n° ' . $numeroMemoire . ' seront enregistrées. Confirmez-vous cette mise à jour ?';
 $confirmationBouton = $enCreation ? 'Ajouter le mémoire' : 'Enregistrer les modifications';
 ?>
-<div class="titre-page">
+<div class="titre-page titre-page-formulaire">
     <h1><?= $enCreation ? 'Nouveau mémoire' : 'Modifier le mémoire n° ' . (int) ($memoire['num_ordre'] ?? 0) ?></h1>
     <div class="actions"><a class="bouton bouton-secondaire" href="<?= e(url('/memoires')) ?>">← Retour à la liste</a></div>
 </div>
@@ -42,24 +42,25 @@ $confirmationBouton = $enCreation ? 'Ajouter le mémoire' : 'Enregistrer les mod
     </div>
 <?php endif; ?>
 
-<div class="carte">
+<div class="carte carte-formulaire">
     <form method="post" action="<?= e($enCreation ? url('/memoires/creer') : url('/memoires/modifier?id=' . $memoire['id_memoire'])) ?>"
           data-confirm-title="<?= e($confirmationTitre) ?>"
           data-confirm="<?= e($confirmationMessage) ?>"
           data-confirm-label="<?= e($confirmationBouton) ?>">
         <input type="hidden" name="jeton" value="<?= e(Auth::jeton()) ?>">
+        <input type="hidden" name="version" value="<?= e($version ?? '') ?>">
         <div class="grille-form">
             <div class="champ">
-                <label>Année *</label>
+                <label>Année <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="number" name="annee" min="1990" max="2100" required
                        value="<?= $v('annee', date('Y')) ?>">
             </div>
             <div class="champ">
-                <label>N° d'ordre <?= $enCreation ? '(auto si vide)' : '*' ?></label>
+                <label>N° d'ordre<?= $enCreation ? '' : ' <span class="etoile-obligatoire" aria-hidden="true">*</span>' ?></label>
                 <input type="number" name="num_ordre" value="<?= $v('num_ordre') ?>">
             </div>
             <div class="champ">
-                <label>Type de mémoire *</label>
+                <label>Type de mémoire <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <select name="type_memoire">
                     <?php foreach (MemoireModel::TYPES as $code => $libelle): ?>
                         <option value="<?= e($code) ?>" <?= ($valeursFormulaire['type_memoire'] ?? ($memoire['type_memoire'] ?? 'ampliatif')) === $code ? 'selected' : '' ?>><?= e($libelle) ?></option>
@@ -67,20 +68,24 @@ $confirmationBouton = $enCreation ? 'Ajouter le mémoire' : 'Enregistrer les mod
                 </select>
             </div>
             <div class="champ">
-                <label>Origine du dossier *</label>
+                <label>Origine du dossier <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <select name="origine">
                     <?php foreach (MemoireModel::ORIGINES as $code => $libelle): ?>
                         <option value="<?= e($code) ?>" <?= $origineSelectionnee === $code ? 'selected' : '' ?>><?= e($libelle) ?></option>
                     <?php endforeach; ?>
                 </select>
             </div>
+            <div class="champ champ-large">
+                <label>Pièces</label>
+                <input type="text" name="parties" value="<?= $v('parties') ?>">
+            </div>
             <div class="champ">
-                <label>N° dossier PGCS *</label>
+                <label>N° dossier PGCS <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                 <input type="text" name="num_dossier_PGCS" required value="<?= $v('num_dossier_PGCS', $prefillDossier ?? '') ?>">
             </div>
             <?php if (count($dossiersCorrespondants ?? []) > 1): ?>
                 <div class="champ champ-large">
-                    <label for="memoire-dossier-source">Dossier précis correspondant à ce numéro *</label>
+                    <label for="memoire-dossier-source">Dossier précis correspondant à ce numéro <span class="etoile-obligatoire" aria-hidden="true">*</span></label>
                     <select id="memoire-dossier-source" name="id_dossier_source" required>
                         <option value="">Sélectionner le dossier concerné</option>
                         <?php foreach ($dossiersCorrespondants as $dossierSource): ?>
@@ -93,13 +98,8 @@ $confirmationBouton = $enCreation ? 'Ajouter le mémoire' : 'Enregistrer les mod
                             <option value="<?= (int) $dossierSource['id_reg_pourvoi'] ?>" <?= (int) $idDossierSourceSelectionne === (int) $dossierSource['id_reg_pourvoi'] ? 'selected' : '' ?>><?= e($libelleSource) ?></option>
                         <?php endforeach; ?>
                     </select>
-                    <small>Ce numéro figure plusieurs fois dans le registre. Choisissez le dossier exact pour éviter une liaison erronée.</small>
                 </div>
             <?php endif; ?>
-            <div class="champ champ-large">
-                <label>Pièces</label>
-                <input type="text" name="parties" value="<?= $v('parties') ?>">
-            </div>
             <div class="champ">
                 <label>Déposant</label>
                 <input type="text" name="avocat" value="<?= $v('avocat') ?>">
@@ -125,9 +125,19 @@ $confirmationBouton = $enCreation ? 'Ajouter le mémoire' : 'Enregistrer les mod
                 <textarea name="observation"><?= $v('observation') ?></textarea>
             </div>
         </div>
-        <div style="margin-top:14px">
+        <div class="actions-formulaire">
             <button type="submit" class="bouton bouton-vert">Enregistrer</button>
             <a class="bouton bouton-secondaire" href="<?= e(url('/memoires')) ?>">Annuler</a>
         </div>
     </form>
 </div>
+
+<?php if (!$enCreation): ?>
+<?php
+// Pièces jointes du mémoire (document signé scanné, pièces de procédure).
+$entite = 'memoire';
+$entiteId = (int) $memoire['id_memoire'];
+$retour = '/memoires/modifier?id=' . $entiteId;
+require APP_CHEMIN . '/app/views/partiels/pieces.php';
+?>
+<?php endif; ?>

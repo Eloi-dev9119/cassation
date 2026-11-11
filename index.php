@@ -56,6 +56,21 @@ if (entree_get('e2e_probe') !== null) {
 
 Auth::demarrer();
 
+// Trace de présence : rafraîchit l'horodatage de l'utilisateur connecté
+// (pastilles « En ligne » des listes membres et comptes). Silencieux :
+// la présence ne doit jamais interrompre la navigation. Une écriture par
+// minute suffit largement (PRESENCE_DUREE = 900 s) et évite un INSERT/UPDATE
+// à chaque requête HTTP (images, CSS, navigation rapide…).
+$maintenant = time();
+if (!empty($_SESSION['utilisateur']['id'])
+    && ($maintenant - (int) ($_SESSION['presence_maj'] ?? 0)) >= 60) {
+    try {
+        (new PresenceModel())->enregistrer((int) $_SESSION['utilisateur']['id']);
+        $_SESSION['presence_maj'] = $maintenant;
+    } catch (Throwable) {
+    }
+}
+
 /** @var string[] $route Segments de la route demandée. */
 $route = array_values(array_filter(explode('/', (string) entree_get('r', '')), static fn (string $segment): bool => $segment !== ''));
 $page = $route[0] ?? '';
@@ -69,6 +84,7 @@ try {
         'tableau-de-bord'     => (new DashboardController())->index(),
         'registres'            => (new RegistreController())->dispatch($route),
         'memoires'             => (new MemoireController())->dispatch($route),
+        'pieces'               => (new PieceController())->dispatch($route),
         'suivis'               => (new SuiviController())->dispatch($route),
         'suivis-dossiers'      => (new SuiviDossierController())->index(),
         'repartition'           => (new RepartitionController())->index(),

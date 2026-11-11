@@ -22,11 +22,22 @@ final class RegistreModel
      *
      * @return array{ lignes: array, total: int, pages: int, page: int }
      */
-    public function liste(int $page = 1, string $recherche = '', ?int $annee = null): array
+    public function liste(int $page = 1, string $recherche = '', ?int $annee = null, bool $detention = false): array
+    {
+        // Recherche plein texte d'abord ; repli LIKE à l'exécution si
+        // l'index FULLTEXT manque (migration non encore exécutée).
+        try {
+            return $this->lister($page, $recherche, $annee, true, $detention);
+        } catch (PDOException) {
+            return $this->lister($page, $recherche, $annee, false, $detention);
+        }
+    }
+
+    private function lister(int $page, string $recherche, ?int $annee, bool $fulltext, bool $detention = false): array
     {
         $bdd    = Database::connexion();
         $table  = nom_sql($this->definition['table']);
-        [$where, $params] = $this->construireFiltres($recherche, $annee);
+        [$where, $params] = $this->construireFiltres($recherche, $annee, $fulltext, $detention);
         $condition = $where ? ' WHERE ' . implode(' AND ', $where) : '';
 
         // Nombre total de dossiers correspondant aux filtres.
@@ -52,9 +63,18 @@ final class RegistreModel
     }
 
     /** Retourne toutes les lignes filtrées pour un export (sans pagination). */
-    public function exporter(string $recherche = '', ?int $annee = null): iterable
+    public function exporter(string $recherche = '', ?int $annee = null, bool $detention = false): iterable
     {
-        [$where, $params] = $this->construireFiltres($recherche, $annee);
+        try {
+            return $this->exporterAvec($recherche, $annee, true, $detention);
+        } catch (PDOException) {
+            return $this->exporterAvec($recherche, $annee, false, $detention);
+        }
+    }
+
+    private function exporterAvec(string $recherche, ?int $annee, bool $fulltext, bool $detention = false): iterable
+    {
+        [$where, $params] = $this->construireFiltres($recherche, $annee, $fulltext, $detention);
         $condition = $where ? ' WHERE ' . implode(' AND ', $where) : '';
         $sql = 'SELECT * FROM ' . nom_sql($this->definition['table']) . $condition
              . ' ORDER BY ' . ordre_sql($this->definition['ordre']);
@@ -142,27 +162,45 @@ final class RegistreModel
     // ------------------------------------------------------------------ //
 
     /**
-     * Construit les filtres SQL (recherche + année) avec leurs paramètres liés.
+     * Construit les filtres SQL (recherche, année, détention) avec leurs
+     * paramètres liés.
      * @return array{0: string[], 1: array}
      */
-    private function construireFiltres(string $recherche, ?int $annee): array
+    private function construireFiltres(string $recherche, ?int $annee, bool $fulltext = true, bool $detention = false): array
     {
         $where  = [];
         $params = [];
 
         $recherche = trim($recherche);
         if ($recherche !== '') {
-            $conditions = [];
-            foreach ($this->definition['recherche'] as $i => $colonne) {
-                $cle = 'q' . $i;
-                $conditions[] = nom_sql($colonne) . ' LIKE :' . $cle;
-                $params[$cle] = '%' . $recherche . '%';
+            // Plein texte (index FULLTEXT) dès 3 caractères — les colonnes
+            // MATCH sont exactement celles de l'index de chaque registre ;
+            // LIKE sinon (saisie courte ou index absent).
+            if ($fulltext && mb_strlen($recherche) >= 3) {
+                $colonnesRecherche = array_map('nom_sql', $this->definition['recherche']);
+                $where[] = 'MATCH (' . implode(', ', $colonnesRecherche) . ') AGAINST (:qft IN BOOLEAN MODE)';
+                $params['qft'] = $recherche;
+            } else {
+                $conditions = [];
+                foreach ($this->definition['recherche'] as $i => $colonne) {
+                    $cle = 'q' . $i;
+                    $conditions[] = nom_sql($colonne) . ' LIKE :' . $cle;
+                    $params[$cle] = '%' . $recherche . '%';
+                }
+                $where[] = '(' . implode(' OR ', $conditions) . ')';
             }
-            $where[] = '(' . implode(' OR ', $conditions) . ')';
         }
         if ($annee !== null) {
             $where[] = 'annee = :annee';
             $params['annee'] = $annee;
+        }
+        // Filtre « dossiers en détention » (colonne binaire, registres
+        // pénaux uniquement). Utilisé par la tuile du tableau de bord afin
+        // que le nombre annoncé corresponde exactement à la liste ouverte.
+        if ($detention
+            && in_array('detention', array_column($this->definition['colonnes'], 'nom'), true)) {
+            $where[] = 'detention = :detention';
+            $params['detention'] = '1';
         }
         return [$where, $params];
     }

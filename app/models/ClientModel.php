@@ -78,6 +78,18 @@ final class ClientModel
      *               (comportement de la v1, mot de passe MD5 conservé).
      *  - 'client' : compte historique de pgcc_client encore non validé.
      */
+    public function donneesNotification(int $id, string $source = 'client'): ?array
+    {
+        $table = $source === 'new' ? 'pgcc_new_client' : 'pgcc_client';
+        $req = Database::connexion()->prepare(
+            'SELECT nom, prenom, login FROM ' . $table . ' WHERE id_client = :id LIMIT 1'
+        );
+        $req->execute(['id' => $id]);
+        $membre = $req->fetch();
+
+        return $membre === false ? null : $membre;
+    }
+
     public function valider(int $id, string $source = 'client'): bool
     {
         $db = Database::connexion();

@@ -19,12 +19,6 @@ $heure = static function (?string $date): string {
     </div>
 </div>
 
-<div class="alerte alerte-info">
-    Le journal reprend les créations et modifications enregistrées automatiquement dans les tables
-    métier (colonnes <code>date_creation</code>, <code>date_modification</code>, <code>cree_par</code>
-    et <code>modifie_par</code>). Les 200 activités les plus récentes sont affichées.
-</div>
-
 <div class="tableau-enveloppe">
     <table class="liste">
         <thead>
@@ -35,7 +29,10 @@ $heure = static function (?string $date): string {
         </thead>
         <tbody>
             <?php if ($journal === []): ?>
-                <tr><td colspan="7" style="text-align:center;color:var(--gris);padding:26px">Aucune activité enregistrée.</td></tr>
+                <tr><td colspan="7" class="etat-vide">
+                    <strong>Aucune activité enregistrée</strong>
+                    Le journal se remplira dès la première action enregistrée.
+                </td></tr>
             <?php endif; ?>
             <?php foreach ($journal as $entree): ?>
                 <tr>

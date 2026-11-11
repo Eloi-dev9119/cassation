@@ -90,6 +90,7 @@ final class AdministrationController
             'filtre'    => $filtre,
             'recherche' => $recherche,
             'comptes'   => $comptes,
+            'presence'  => (new PresenceModel())->carte(),
         ]);
     }
 
@@ -213,11 +214,14 @@ final class AdministrationController
 
         switch ($action) {
             case 'valider':
+                $source = $source === 'new' ? 'new' : 'client';
+                $membre = $membres->donneesNotification($id, $source);
                 $ok = $source === 'new'
                     ? $membres->valider($id, 'new')
                     : $modele->valider($id);
                 flash($ok ? 'succes' : 'erreur', $ok
-                    ? 'Le compte a été validé. Le membre peut désormais se connecter.'
+                    ? 'Le compte a été validé. Le membre peut désormais se connecter. '
+                        . Mailer::notifierValidationCompte($membre)
                     : 'Impossible de valider ce compte.');
                 break;
 

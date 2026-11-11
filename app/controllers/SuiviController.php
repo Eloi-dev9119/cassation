@@ -19,6 +19,7 @@ final class SuiviController
         match ($action) {
             'liste'    => $this->liste($type),
             'creer'    => $this->creer($type),
+            'modifier' => $this->modifier($type),
             'archiver' => $this->archiver($type),
             default    => page_404('Action inconnue'),
         };
@@ -40,11 +41,15 @@ final class SuiviController
         }
         $resultat  = $modeleSuivi->liste($type, $page, $recherche);
 
+        // Vue complète : tout le contenu des colonnes longues affiché.
+        $vueComplete = entree_get('vue', '') === 'complet';
+
         View::afficher('suivis/liste.php', [
-            'titrePage' => SuiviModel::definition($type)['libelle'] . ' — ' . APP_NOM,
-            'type'      => $type,
-            'resultat'  => $resultat,
-            'recherche' => $recherche,
+            'titrePage'   => SuiviModel::definition($type)['libelle'] . ' — ' . APP_NOM,
+            'type'        => $type,
+            'resultat'    => $resultat,
+            'recherche'   => $recherche,
+            'vueComplete' => $vueComplete,
         ]);
     }
 
@@ -73,6 +78,45 @@ final class SuiviController
             'titrePage' => 'Nouveau suivi — ' . $modele['libelle'] . ' — ' . APP_NOM,
             'type'      => $type,
             'definition'=> $modele,
+            'erreurs'   => $erreurs,
+        ]);
+    }
+
+    /**
+     * Formulaire et traitement de modification d'un suivi.
+     */
+    private function modifier(string $type): void
+    {
+        $modele = new SuiviModel();
+        $definition = SuiviModel::definition($type);
+        $id = (int) entree_get('id', 0);
+        $suivi = $modele->trouver($type, $id);
+
+        if ($suivi === null) {
+            http_response_code(404);
+            View::afficher('erreurs/404.php', ['titrePage' => 'Suivi introuvable']);
+            return;
+        }
+
+        $erreurs = [];
+        if (requete_post()) {
+            if (!Auth::verifierJeton(entree_post('jeton'))) {
+                flash('erreur', 'Votre session a expiré. Rechargez la page puis réessayez.');
+                rediriger('/suivis/' . $type);
+            }
+            [$donnees, $erreurs] = $modele->lireFormulaire($type);
+            if ($erreurs === []) {
+                $modele->modifier($type, $id, $donnees);
+                flash('succes', 'Le suivi n° ' . $donnees['num_ordre'] . '/' . $donnees['annee'] . ' a été mis à jour.');
+                rediriger('/suivis/' . $type);
+            }
+        }
+
+        View::afficher('suivis/formulaire.php', [
+            'titrePage' => 'Modifier le suivi — ' . $definition['libelle'] . ' — ' . APP_NOM,
+            'type'      => $type,
+            'definition'=> $definition,
+            'suivi'     => $suivi,
             'erreurs'   => $erreurs,
         ]);
     }

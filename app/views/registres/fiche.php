@@ -25,6 +25,12 @@ $colonneConclusion = $definition['conclusion'];
     <dl class="fiche-definition">
         <?php foreach ($definition['colonnes'] as $colonne): ?>
             <?php if (($colonne['afficherFiche'] ?? true) === false) { continue; } ?>
+            <?php
+            // La conclusion possède son propre bloc HTML ci-dessous : la
+            // répéter ici afficherait deux fois le texte, et les conclusions
+            // collées depuis Word apparaîtraient en balises brutes.
+            if ($colonne['nom'] === $colonneConclusion) { continue; }
+            ?>
             <?php $valeur = $dossier[$colonne['nom']] ?? ''; ?>
             <dt><?= e($colonne['libelle']) ?></dt>
             <dd>
@@ -42,13 +48,18 @@ $colonneConclusion = $definition['conclusion'];
 </div>
 
 <?php if ($colonneConclusion !== null && trim((string) ($dossier[$colonneConclusion] ?? '')) !== ''): ?>
-<div class="carte" style="border-left:4px solid var(--bordeaux, #7a2048)">
+<?php $conclusionFiche = (string) $dossier[$colonneConclusion]; ?>
+<div class="carte carte-conclusion">
     <h2>Conclusion</h2>
-    <p style="white-space:pre-line;margin:0"><?= nl2br(e((string) $dossier[$colonneConclusion])) ?></p>
+    <?php if (str_starts_with(ltrim($conclusionFiche), '<')): ?>
+        <div class="conclusion-apercu"><?= rendre_conclusion($conclusionFiche) ?></div>
+    <?php else: ?>
+        <p style="white-space:pre-line;margin:0"><?= nl2br(e($conclusionFiche)) ?></p>
+    <?php endif; ?>
 </div>
 <?php endif; ?>
 
-<div class="carte" style="border-left:4px solid var(--orange)">
+<div class="carte carte-tracabilite">
     <h2>Traçabilité</h2>
     <div class="grille-form">
         <div>
@@ -72,14 +83,18 @@ $colonneConclusion = $definition['conclusion'];
             <div><?= e($dossier['modifie_par'] ?? '—') ?></div>
         </div>
     </div>
-    <p style="color:var(--gris);font-size:12px;margin-bottom:0">
-        Les horodatages sont tenus par la base de données (visibles également dans phpMyAdmin) ;
-        le nom du créateur et du dernier modificateur est renseigné par PGCC v2.
-    </p>
 </div>
 
+<?php
+// Pièces jointes du dossier (documents scannés).
+$entite = 'dossier_' . $code;
+$entiteId = (int) $dossier[$definition['cle']];
+$retour = '/registres/' . $code . '/fiche?id=' . $entiteId;
+require APP_CHEMIN . '/app/views/partiels/pieces.php';
+?>
+
 <?php if (in_array($code, ["penaux", "civils"], true)): ?>
-<div class="carte">
+<div class="carte carte-memoires">
     <h2>Mémoires rattachés à ce dossier</h2>
     <?php if ($memoires === []): ?>
         <p style="color:var(--gris)">Aucun mémoire rattaché à ce numéro de dossier.</p>
@@ -108,7 +123,7 @@ $colonneConclusion = $definition['conclusion'];
 <?php endif; ?>
 
 <?php if ($code === 'civils'): ?>
-<div class="carte">
+<div class="carte carte-liaison">
     <h2>Suivi au Siège</h2>
     <?php if (($siegesCivil ?? []) === []): ?>
         <p>Aucun dossier du Siège n'est encore lié à ce pourvoi civil.</p>
@@ -116,16 +131,16 @@ $colonneConclusion = $definition['conclusion'];
     <?php else: ?>
         <ul>
             <?php foreach ($siegesCivil as $siegeCivil): ?>
-                <li><a href="<?= e(url('/registres/siege/fiche?id=' . (int) $siegeCivil['id_civil'])) ?>">Dossier du Si?ge <?= e($siegeCivil['num_dossier']) ?> (<?= (int) $siegeCivil['annee'] ?>)</a></li>
+                <li><a href="<?= e(url('/registres/siege/fiche?id=' . (int) $siegeCivil['id_civil'])) ?>">Dossier du Siège <?= e($siegeCivil['num_dossier']) ?> (<?= (int) $siegeCivil['annee'] ?>)</a></li>
             <?php endforeach; ?>
         </ul>
     <?php endif; ?>
 </div>
 <?php elseif ($code === 'siege'): ?>
-<div class="carte">
+<div class="carte carte-liaison">
     <h2>Dossier civil rattaché</h2>
     <?php if (($dossierCivilLie ?? null) === null): ?>
-        <p>Aucun dossier civil n'est encore associé. Modifiez cette fiche pour choisir le dossier correspondant.</p>
+        <p>Aucun dossier civil associé.</p>
     <?php else: ?>
         <p><a href="<?= e(url('/registres/civils/fiche?id=' . (int) $dossierCivilLie['id_reg_pourvoi'])) ?>">
             Dossier <?= e($dossierCivilLie['num_dossier_PGCS']) ?> — <?= e($dossierCivilLie['cassationnaire'] ?: 'Parties non renseignées') ?>
