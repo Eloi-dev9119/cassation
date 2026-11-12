@@ -44,7 +44,7 @@ Le même moteur sert les **6 registres de dossiers** et le **registre des mémoi
 | **Registres Pénaux** | Pourvois pénaux : parties, inculpation, arrêt attaqué, date et lieu du pourvoi, juridiction, nature de décision, dispositive |
 | **Registres Civils** | Pourvois civils : mémoire ampliatif/en défense déposés, arrêt attaqué et date |
 | **Registres Déssaisissements** | Demandes de déssaisissement |
-| **Registre du Siège** | Suivi des cassations civiles au Siège, **lié au dossier civil d'origine** (lien croisé dans les deux sens) |
+| **Registre du Siège** | Suivi des cassations civiles au Siège, **lié au dossier civil d'origine** (lien croisé dans les deux sens) — liste à parité v1 (16 colonnes détaillées : parties et avocats, n° de l'arrêt attaqué, conseiller rapporteur, dates de dépôt/notification des mémoires, transmission au ministère public, n° d'arrêt CS, motif de décision) |
 | **Registre PIL** | Tableau de suivi des pourvois dans l'intérêt de la loi (lettre du ministère, magistrat instructeur, requête, audience, arrêt) |
 | **Registre des Mémoires** | Mémoires ampliatifs / en défense : type, origine (pénal/civil), parties, avocat, juridiction, notification, dépôt, transmission au secrétaire, rapporteur, état |
 

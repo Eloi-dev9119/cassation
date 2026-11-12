@@ -721,6 +721,11 @@ details.modules-section[open] summary {
     font-size: 13.5px;
 }
 
+/* Écart resserré entre le titre et la carte de recherche (annotation). */
+.tableau-titre {
+    margin-bottom: 10px;
+}
+
 /* Barre de recherche globale : les actions principales (créer un dossier,
    ajouter un mémoire) s'alignent sur le champ, séparées par un filet. */
 .filtres-separateur {
@@ -731,7 +736,9 @@ details.modules-section[open] summary {
     flex: 0 0 auto;
     width: 1px;
     height: 26px;
-    margin: 0 7px;
+    /* Marge gauche automatique : le filet et les boutons d'action sont
+       poussés au bord droit de la barre de recherche. */
+    margin: 0 7px 0 auto;
     background: var(--bordure-forte);
 }
 

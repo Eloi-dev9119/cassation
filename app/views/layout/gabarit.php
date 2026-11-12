@@ -24,7 +24,7 @@ if ($initiales === '') {
     <link rel="icon" type="image/svg+xml" href="<?= e(asset('favicon.svg')) ?>">
     <title><?= e($titre) ?></title>
     <script src="<?= e(asset('theme.js') . '?v=5') ?>"></script>
-    <link rel="stylesheet" href="<?= e(asset('style.css') . '?v=55') ?>">
+    <link rel="stylesheet" href="<?= e(asset('style.css') . '?v=57') ?>">
     <script src="<?= e(asset('confirmations.js') . '?v=3') ?>" defer></script>
     <script src="<?= e(asset('filtres.js') . '?v=1') ?>" defer></script>
 </head>

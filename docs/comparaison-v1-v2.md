@@ -114,7 +114,7 @@ Colonnes supplémentaires v2 : Année, Détention (+ date), Localisation, Transm
 | Inscription avec question secrète | ✅ | Identique |
 | Comptes partagés v1/v2 (MD5 → bcrypt) | ✅ | Migration transparente à la connexion |
 | Registre PIL (`pgcsPil.php`) | ✅ | **Ajouté le 01/11** : exposé dans v2 comme sixième registre déclaratif (`/registres/pil`) sur la table `pgcc_reg_pil` — colonnes d'audit et index d'année ajoutés par `database/migrations/pil_audit.sql` (la grille statique de la v1 ne contenait aucune donnée ni SQL) |
-| Siège — Cassation civile (`siegePenaux.tpl`) | 🔁 partiel | v2 gère le suivi au Siège lié au dossier civil (sans toutes les colonnes détaillées du modèle v1 : conseiller rapporteur, dates mémoires côté Siège) |
+| Siège — Cassation civile (`siegePenaux.tpl`) | ✅ | v2 reprend l'intégralité du modèle v1 : liste des 16 colonnes détaillées (parties et avocats, n° de l'arrêt attaqué, conseiller rapporteur, dates de dépôt/notification des mémoires, transmission au ministère public, n° d'arrêt CS, motif de décision) **et** liaison au dossier civil d'origine (lien croisé dans les deux sens) |
 | Impressions | ✅ | Feuilles de style print + bouton Imprimer sur toutes les listes/fiches |
 | Messages / correspondances (`pgcc_message`) | ⏳ évolution prévue | Non reprise |
 
@@ -145,3 +145,14 @@ Vérification exhaustive des deux applications (toutes les pages v1 × toutes le
 *Pièces jointes et messagerie interne (`pgcc_correspondance`, `pgcc_message`) : hors parité — aucun écran dans la v1 elle-même (tables héritage sans UI).*
 
 *Vérification de cohérence automatique : aucun doublon de colonne, chaque champ de section a sa définition — OK sur les 5 registres.*
+
+## Complément de parité — registre du Siège (12/11/2026)
+
+La table `siege_cassation_civ` et le formulaire v2 étaient déjà complets (schéma identique à la v1, 18 champs v1 exposés) ; le seul écart réel restait la **liste**, qui n'affichait que 6 colonnes contre 16 dans `siegePenaux.tpl`. Le registre du Siège est désormais à parité :
+
+1. **Liste du Siège** : portée à 19 colonnes — les 16 colonnes détaillées de la v1 (N° dossier, Nom et domicile du demandeur, Avocat du demandeur, Nom et domicile du défendeur, Avocat du défendeur, N° de l'arrêt (cour d'appel), Nom conseiller rapporteur, Date de dépôt au rapporteur, Date de notification du mémoire de pourvoi, Dates de dépôt/notification du mémoire ampliatif, Date de dépôt du mémoire en défense, Date de dépôt du rapport, Date de transmission au ministère public, Date de dépôt de la conclusion au ministère public, N° d'arrêt CS, Motif de décision), plus l'Année et l'indicateur d'Archivé propres à v2, et la colonne d'actions.
+2. **Libellés alignés** sur ceux du modèle papier v1.
+3. **Recherche élargie** au `numero_arret_cours_appel`.
+4. **Tests** : `tests/test_rendus.php` couvre le rendu de la liste du Siège et vérifie la présence des 14 libellés détaillés v1 ; la boucle des formulaires inclut désormais `siege` et `pil`.
+
+*Aucune donnée existante modifiée : le registre du Siège reste vide en base (`siege_cassation_civ` = 0 ligne).*

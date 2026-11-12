@@ -86,13 +86,50 @@ $badgeOk = str_contains($htmlIndicateur, '>Mémoires</th>')
     && str_contains($htmlIndicateur, '>—</span>');
 echo ($badgeOk ? '  OK  ' : 'ECHEC ') . 'indicateur Mémoires : en-tête + badge compteur + « — »' . PHP_EOL;
 if (!$badgeOk) { $echecs++; }
+
+// Registre du Siège : parité v1 — la liste reprend l'intégralité des
+// colonnes détaillées du modèle v1 (siegePenaux.tpl), en plus de l'année et
+// de l'indicateur d'archivage propres à v2.
+$defSiege = registre_definition('siege');
+$ligneSiege = [
+    'id_civil' => 5, 'num_dossier' => '388/18', 'annee' => 2018,
+    'nom_demandeur' => 'RAKOTO', 'avocat_demandeur' => 'Me A',
+    'nom_defendeur' => 'État', 'avocat_defendeur' => 'Me B',
+    'numero_arret_cours_appel' => '12/2017', 'rapporteur' => 'M. RANDRIAN',
+    'date_rapporteur' => '2018-03-01', 'date_notification_pourvoi' => '2018-03-05',
+    'date_depot_memoire_ampliatif' => '2018-04-01', 'date_notification_memoire_ampliatif' => '2018-04-10',
+    'date_depot_memoire_defense' => '2018-04-20', 'date_depot_rapport' => '2018-05-01',
+    'date_transmission' => '2018-05-15', 'date_depot_conclusion' => '2018-06-01',
+    'numero_arret_cs' => '45/2018', 'decision' => 'rejet', 'archive' => '0',
+    'date_creation' => '2018-01-01 08:00:00', 'cree_par' => 'system',
+    'date_modification' => null, 'modifie_par' => null,
+];
+ob_start();
+View::afficher('registres/liste.php', [
+    'titrePage' => 't', 'definition' => $defSiege, 'code' => 'siege',
+    'resultat' => ['lignes' => [$ligneSiege], 'total' => 1, 'pages' => 1, 'page' => 1],
+    'recherche' => '', 'annee' => null, 'annees' => [2018],
+]);
+$htmlSiege = (string) ob_get_clean();
+$libellesV1Siege = ['Nom et domicile du demandeur', 'Avocat du demandeur',
+    'Nom et domicile du défendeur', 'Avocat du défendeur', 'Nom conseiller rapporteur',
+    'Date de dépôt au rapporteur', 'Date de notification du mémoire de pourvoi',
+    'Date de dépôt du mémoire ampliatif', 'Date de notification du mémoire ampliatif',
+    'Date de dépôt du mémoire en défense', 'Date de dépôt du rapport',
+    'Date de transmission au ministère public',
+    'Date de dépôt de la conclusion au ministère public', 'Motif de décision'];
+$manquantsSiege = array_filter($libellesV1Siege, static fn (string $l): bool => !str_contains($htmlSiege, $l));
+$siegeOk = strlen($htmlSiege) > 500 && $manquantsSiege === [];
+echo ($siegeOk ? '  OK  ' : 'ECHEC ') . 'registres/liste Siège (parité v1 : ' . count($libellesV1Siege) . ' colonnes détaillées)' . PHP_EOL;
+if (!$siegeOk) { $echecs++; }
+
 rendre('registres/fiche.php', [
     'titrePage' => 't', 'definition' => $def, 'code' => 'penaux',
     'dossier' => $ligneDossier, 'memoires' => [],
 ], 'registres/fiche (lien préremplissage mémoire)');
 
 echo '--- Formulaires de registres ---' . PHP_EOL;
-foreach (['arrivees', 'penaux', 'civils', 'dessaisissements'] as $codeRegistre) {
+foreach (['arrivees', 'penaux', 'civils', 'dessaisissements', 'siege', 'pil'] as $codeRegistre) {
     $definitionFormulaire = registre_definition($codeRegistre);
     rendre('registres/formulaire.php', [
         'titrePage' => 'Formulaire de test',

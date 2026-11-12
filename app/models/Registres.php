@@ -238,7 +238,7 @@ function registres_definitions(): array
             'cle'          => 'id_civil',
             'colonneArchive' => 'archive',
             'ordre'        => 'annee DESC, id_civil DESC',
-            'recherche'    => ['num_dossier', 'nom_demandeur', 'nom_defendeur', 'rapporteur'],
+            'recherche'    => ['num_dossier', 'nom_demandeur', 'nom_defendeur', 'rapporteur', 'numero_arret_cours_appel'],
             'conclusion'   => null,
             'sections'     => [
                 'Dossier et parties' => ['id_reg_pourvoi_civ', 'num_dossier', 'annee', 'nom_demandeur', 'nom_defendeur', 'avocat_demandeur', 'avocat_defendeur'],
@@ -246,27 +246,37 @@ function registres_definitions(): array
                 'Mémoires et transmission' => ['date_depot_memoire_defense', 'date_notification_memoire_ampliatif', 'date_depot_memoire_ampliatif', 'date_depot_rapport', 'date_transmission'],
                 'Conclusion et décision' => ['date_depot_conclusion', 'numero_arret_cours_appel', 'numero_arret_cs', 'decision'],
             ],
+            // Colonnes de liste alignées sur PGCC v1 (siegePenaux.tpl) :
+            // N° dossier, Nom et domicile du demandeur, Avocat du demandeur,
+            // Nom et domicile du défendeur, Avocat du défendeur, N° de l'arrêt
+            // (cour d'appel), Nom conseiller rapporteur, Date de dépôt au
+            // rapporteur, Date de notification du mémoire de pourvoi, Date de
+            // dépôt / de notification du mémoire ampliatif, Date de dépôt du
+            // mémoire en défense, Date de dépôt du rapport, Date de
+            // transmission au ministère public, Date de dépôt de la conclusion
+            // au ministère public, N° d'arrêt CS et motif de décision — puis
+            // l'année et l'indicateur d'archivage propres à v2.
             'colonnes'     => [
-                ['nom' => 'id_reg_pourvoi_civ', 'libelle' => 'Dossier civil correspondant', 'type' => 'dossier_civil', 'liste' => false, 'formulaire' => true, 'requis' => true, 'afficherFiche' => false],
                 ['nom' => 'num_dossier',     'libelle' => 'N° dossier', 'type' => 'texte', 'liste' => true, 'formulaire' => true, 'requis' => true],
                 ['nom' => 'annee',           'libelle' => 'Année', 'type' => 'nombre', 'liste' => true, 'formulaire' => true, 'requis' => true],
-                ['nom' => 'nom_demandeur',   'libelle' => 'Demandeur', 'type' => 'texte', 'liste' => true, 'formulaire' => true],
-                ['nom' => 'nom_defendeur',   'libelle' => 'Défendeur', 'type' => 'texte', 'liste' => true, 'formulaire' => true],
-                ['nom' => 'rapporteur',      'libelle' => 'Rapporteur', 'type' => 'texte', 'liste' => true, 'formulaire' => true],
-                ['nom' => 'date_rapporteur', 'libelle' => 'Date rapporteur', 'type' => 'date', 'liste' => false, 'formulaire' => true],
-                ['nom' => 'date_notification_pourvoi', 'libelle' => 'Notification pourvoi', 'type' => 'date', 'liste' => false, 'formulaire' => true],
-                ['nom' => 'date_depot_memoire_defense', 'libelle' => 'Dépôt mémoire défense', 'type' => 'date', 'liste' => false, 'formulaire' => true],
-                ['nom' => 'date_notification_memoire_ampliatif', 'libelle' => 'Notification mémoire ampliatif', 'type' => 'date', 'liste' => false, 'formulaire' => true],
-                ['nom' => 'date_depot_memoire_ampliatif', 'libelle' => 'Dépôt mémoire ampliatif', 'type' => 'date', 'liste' => false, 'formulaire' => true],
-                ['nom' => 'date_depot_rapport', 'libelle' => 'Dépôt rapport', 'type' => 'date', 'liste' => false, 'formulaire' => true],
-                ['nom' => 'date_transmission', 'libelle' => 'Transmission', 'type' => 'date', 'liste' => false, 'formulaire' => true],
-                ['nom' => 'date_depot_conclusion', 'libelle' => 'Dépôt conclusion', 'type' => 'date', 'liste' => false, 'formulaire' => true],
-                ['nom' => 'numero_arret_cours_appel', 'libelle' => 'N° arrêt cours appel', 'type' => 'texte', 'liste' => false, 'formulaire' => true],
-                ['nom' => 'numero_arret_cs', 'libelle' => 'N° arrêt CS', 'type' => 'texte', 'liste' => false, 'formulaire' => true],
-                ['nom' => 'decision',        'libelle' => 'Décision', 'type' => 'textelong', 'liste' => false, 'formulaire' => true],
-                ['nom' => 'avocat_demandeur','libelle' => 'Avocat demandeur', 'type' => 'texte', 'liste' => false, 'formulaire' => true],
-                ['nom' => 'avocat_defendeur','libelle' => 'Avocat défendeur', 'type' => 'texte', 'liste' => false, 'formulaire' => true],
+                ['nom' => 'nom_demandeur',   'libelle' => 'Nom et domicile du demandeur', 'type' => 'texte', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'avocat_demandeur','libelle' => 'Avocat du demandeur', 'type' => 'texte', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'nom_defendeur',   'libelle' => 'Nom et domicile du défendeur', 'type' => 'texte', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'avocat_defendeur','libelle' => 'Avocat du défendeur', 'type' => 'texte', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'numero_arret_cours_appel', 'libelle' => 'N° de l’arrêt (cour d’appel)', 'type' => 'texte', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'rapporteur',      'libelle' => 'Nom conseiller rapporteur', 'type' => 'texte', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'date_rapporteur', 'libelle' => 'Date de dépôt au rapporteur', 'type' => 'date', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'date_notification_pourvoi', 'libelle' => 'Date de notification du mémoire de pourvoi', 'type' => 'date', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'date_depot_memoire_ampliatif', 'libelle' => 'Date de dépôt du mémoire ampliatif', 'type' => 'date', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'date_notification_memoire_ampliatif', 'libelle' => 'Date de notification du mémoire ampliatif', 'type' => 'date', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'date_depot_memoire_defense', 'libelle' => 'Date de dépôt du mémoire en défense', 'type' => 'date', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'date_depot_rapport', 'libelle' => 'Date de dépôt du rapport', 'type' => 'date', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'date_transmission', 'libelle' => 'Date de transmission au ministère public', 'type' => 'date', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'date_depot_conclusion', 'libelle' => 'Date de dépôt de la conclusion au ministère public', 'type' => 'date', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'numero_arret_cs', 'libelle' => 'N° d’arrêt CS', 'type' => 'texte', 'liste' => true, 'formulaire' => true],
+                ['nom' => 'decision',        'libelle' => 'Motif de décision', 'type' => 'textelong', 'liste' => true, 'formulaire' => true],
                 ['nom' => 'archive',         'libelle' => 'Archivé', 'type' => 'booleen', 'liste' => true, 'formulaire' => false],
+                ['nom' => 'id_reg_pourvoi_civ', 'libelle' => 'Dossier civil correspondant', 'type' => 'dossier_civil', 'liste' => false, 'formulaire' => true, 'requis' => true, 'afficherFiche' => false],
             ],
         ],
 
