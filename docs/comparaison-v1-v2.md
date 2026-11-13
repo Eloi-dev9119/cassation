@@ -106,7 +106,7 @@ Colonnes supplémentaires v2 : Année, Détention (+ date), Localisation, Transm
 | Actions par ligne : voir 🔍, modifier ✏️ | ✅ | Fiche + Modifier (liens) |
 | Supprimer 🗑️ | 🔁 remplacé | v2 archive/rétablit (réversible, aucune perte) — plus sûr qu'une suppression définitive |
 | **Pièces jointes** (icônes dossier, `uploadFile/`) | ⏳ évolution prévue | Non reprise : nécessite table de fichiers, upload sécurisé et stockage. À implémenter |
-| Conclusions (éditeur + 3 gabarits) | ✅ | Éditeur de conclusion + modèle prérempli (en-tête, parties, dates, chambre) et impression |
+| Conclusions (éditeur + 3 gabarits) | ✅ | Éditeur de conclusion + modèle prérempli **propre à chaque registre** — `ConclusionPenale` (pourvoi pénal), `ConclusionCivile` (pourvoi civil), `ConclusionDessaisissement` (requête aux fins de renvoi d'une juridiction à une autre) — et impression |
 | Graphiques d'activité (jpgraph) | ✅ | Graphiques natifs HTML/CSS (par année, répartition par AG) — sans dépendance |
 | Suivi des dossiers par AG | ✅ | Synthèse + compteurs + **graphe « dossiers pour conclusion » par AG** (ajouté le 01/11, parité avec `grapheSuiviDossier.php`) |
 | Répartition mensuelle | ✅ | Avec graphique |
@@ -156,3 +156,11 @@ La table `siege_cassation_civ` et le formulaire v2 étaient déjà complets (sch
 4. **Tests** : `tests/test_rendus.php` couvre le rendu de la liste du Siège et vérifie la présence des 14 libellés détaillés v1 ; la boucle des formulaires inclut désormais `siege` et `pil`.
 
 *Aucune donnée existante modifiée : le registre du Siège reste vide en base (`siege_cassation_civ` = 0 ligne).*
+
+## Correction — conclusion du registre des déssaisissements (13/11/2026)
+
+La conclusion d'un dossier de déssaisissement préremplissait à tort le **modèle pénal** (`ConclusionPenale`) : en-tête « CHAMBRE DES AFFAIRES PÉNALES », « … prévenu, s'est pourvu en cassation », « tribunal correctionnel », « rejet du pourvoi ». Or un déssaisissement est une **« requête aux fins de renvoi d'une juridiction à une autre »** (article 96 de la loi organique n° 2004-036).
+
+1. **Nouveau modèle `ConclusionDessaisissement`** (`app/core/ConclusionDessaisissement.php`) reproduisant le format officiel des conclusions du registre : titre « REQUETE AUX FINS DE RENVOI D'UNE JURIDICTION A UNE AUTRE », visa de la lettre du Garde des Sceaux, visa de l'affaire (parties + infraction), article 96, demande de déssaisissement, signature.
+2. **Aiguillage par registre** dans `RegistreController` (méthode `modeleConclusion`) : `civils → ConclusionCivile`, `dessaisissements → ConclusionDessaisissement`, `penaux → ConclusionPenale` (éditeur, réinsertion du modèle, export PDF et annexe).
+3. **Tests** : `tests/test_rendus.php` vérifie que la conclusion des déssaisissements produit la requête aux fins de renvoi et **ne contient plus** les mentions pénales ; `tests/test_chargement.php` charge et contrôle les trois classes de conclusion.

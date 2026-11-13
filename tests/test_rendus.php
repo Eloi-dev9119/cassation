@@ -18,7 +18,8 @@ require $racine . '/app/core/helpers.php';
 session_start();
 $_SESSION['utilisateur'] = ['id' => 1, 'nom' => 'RAKOTO', 'prenom' => 'Jean', 'login' => 'j.rakoto@pgcc.com', 'poste' => 'PG', 'sigleAG' => 'JRK'];
 
-foreach (['app/core/Database.php', 'app/core/Auth.php', 'app/core/View.php', 'app/core/Graphiques.php'] as $f) {
+foreach (['app/core/Database.php', 'app/core/Auth.php', 'app/core/View.php', 'app/core/Graphiques.php',
+          'app/core/ConclusionPenale.php', 'app/core/ConclusionCivile.php', 'app/core/ConclusionDessaisissement.php'] as $f) {
     require $racine . '/' . $f;
 }
 foreach (glob($racine . '/app/models/*.php') as $f)     require $f;
@@ -122,6 +123,25 @@ $manquantsSiege = array_filter($libellesV1Siege, static fn (string $l): bool => 
 $siegeOk = strlen($htmlSiege) > 500 && $manquantsSiege === [];
 echo ($siegeOk ? '  OK  ' : 'ECHEC ') . 'registres/liste Siège (parité v1 : ' . count($libellesV1Siege) . ' colonnes détaillées)' . PHP_EOL;
 if (!$siegeOk) { $echecs++; }
+
+// Conclusion des déssaisissements : le registre ne doit PAS réutiliser le
+// modèle pénal, mais produire une « requête aux fins de renvoi d'une
+// juridiction à une autre » (article 96 de la loi organique).
+$dossierDes = [
+    'id_reg_des' => 7, 'num_dossier_PGCS' => '002/15 DES', 'annee' => 2015,
+    'cassationnaire' => 'MP C/ X ET CONSORTS', 'inculpation' => 'BRIS DE SCELLES',
+    'juridiction' => 'DESSAISISSEMENT DE LA JURIDICTION DE TOLAGNARO AU PROFIT DE TANA',
+];
+$modeleDes = ConclusionDessaisissement::modele($dossierDes);
+$desOk = str_contains($modeleDes, 'REQUETE AUX FINS DE RENVOI')
+    && str_contains($modeleDes, 'article 96')
+    && str_contains($modeleDes, 'DESSAISISSEMENT DE LA JURIDICTION DE TOLAGNARO')
+    && str_contains($modeleDes, 'MP C/ X ET CONSORTS')
+    && !str_contains($modeleDes, 'CHAMBRE DES AFFAIRES PENALES')
+    && !str_contains($modeleDes, 'rejet du pourvoi')
+    && !str_contains($modeleDes, 'tribunal correctionnel');
+echo ($desOk ? '  OK  ' : 'ECHEC ') . 'conclusion déssaisissements : requête aux fins de renvoi (pas le modèle pénal)' . PHP_EOL;
+if (!$desOk) { $echecs++; }
 
 rendre('registres/fiche.php', [
     'titrePage' => 't', 'definition' => $def, 'code' => 'penaux',

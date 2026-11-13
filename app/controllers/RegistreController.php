@@ -337,17 +337,16 @@ final class RegistreController
         }
 
         $code = $this->codeRegistre($definition);
-        // Modèle prérempli : civil → ConclusionCivile, pénal/dessaisissement
-        // → ConclusionPenale (format PARQUET GENERAL / CHAMBRE DES AFFAIRES PENALES).
+        // Modèle prérempli : civil → ConclusionCivile, déssaisissement →
+        // ConclusionDessaisissement (requête aux fins de renvoi d'une
+        // juridiction à une autre), pénal → ConclusionPenale.
         $modeleDisponible = in_array($code, ['civils', 'penaux', 'dessaisissements'], true);
         $conclusion = (string) ($dossier[$definition['conclusion']] ?? '');
 
         // Export PDF de la conclusion (document A4, sans l'interface).
         if (entree_get('export', '') === 'pdf') {
             if (trim($conclusion) === '' && $modeleDisponible) {
-                $conclusion = $code === 'civils'
-                    ? ConclusionCivile::modele($dossier)
-                    : ConclusionPenale::modele($dossier);
+                $conclusion = $this->modeleConclusion($code, $dossier);
             }
             PdfExporter::telechargerTexte(
                 'conclusion-' . preg_replace('/[^a-zA-Z0-9._-]/', '_', (string) ($dossier['num_dossier_PGCS'] ?? (string) $id)) . '.pdf',
@@ -392,16 +391,27 @@ final class RegistreController
     }
 
     /**
-     * Modèle de conclusion prérempli (pénal/civil selon le registre),
-     * complété d'une annexe reprenant l'intégralité des données du dossier
-     * telles qu'affichées sur sa fiche — le document imprimé (A4) contient
-     * ainsi toutes les informations utiles au rédacteur.
+     * Choisit le modèle de conclusion selon le registre : civil, déssaisis-
+     * sement (requête aux fins de renvoi) ou pénal (par défaut).
+     */
+    private function modeleConclusion(string $code, array $dossier): string
+    {
+        return match ($code) {
+            'civils'           => ConclusionCivile::modele($dossier),
+            'dessaisissements' => ConclusionDessaisissement::modele($dossier),
+            default            => ConclusionPenale::modele($dossier),
+        };
+    }
+
+    /**
+     * Modèle de conclusion prérempli (pénal/civil/déssaisissement selon le
+     * registre), complété d'une annexe reprenant l'intégralité des données du
+     * dossier telles qu'affichées sur sa fiche — le document imprimé (A4)
+     * contient ainsi toutes les informations utiles au rédacteur.
      */
     private function conclusionModeleAvecAnnexe(array $definition, array $dossier, string $code): string
     {
-        $modele = $code === 'civils'
-            ? ConclusionCivile::modele($dossier)
-            : ConclusionPenale::modele($dossier);
+        $modele = $this->modeleConclusion($code, $dossier);
 
         $lignes = [
             '',

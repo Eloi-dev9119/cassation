@@ -120,7 +120,10 @@ Chaque registre fonctionne de la même façon :
 - **Archiver / Désarchiver** : range un dossier traité sans le
   supprimer ; l'opération est réversible.
 - **Conclusion** (pénaux, civils, dessaisissements) : rédaction ou
-  modification du texte de conclusion du dossier.
+  modification du texte de conclusion du dossier. Un modèle prérempli
+  adapté au registre est inséré automatiquement (pourvoi pénal, pourvoi
+  civil, ou requête aux fins de renvoi d'une juridiction à une autre pour
+  les déssaisissements) ; les mentions entre crochets sont à compléter.
 
 Cas particulier du **registre du Siège** : chaque dossier doit être
 relié à un **dossier civil existant** du registre Civils (liste

@@ -19,7 +19,8 @@ require $racine . '/app/core/helpers.php';
 session_start();
 $_SESSION['utilisateur'] = ['id' => 1, 'nom' => 'Test', 'prenom' => 'Dev', 'login' => 'test@pgcc.com', 'poste' => 'PG', 'sigleAG' => 'TST'];
 
-foreach (['app/core/Database.php', 'app/core/Auth.php', 'app/core/View.php', 'app/core/Graphiques.php'] as $f) {
+foreach (['app/core/Database.php', 'app/core/Auth.php', 'app/core/View.php', 'app/core/Graphiques.php',
+          'app/core/ConclusionPenale.php', 'app/core/ConclusionCivile.php', 'app/core/ConclusionDessaisissement.php'] as $f) {
     require $racine . '/' . $f;
 }
 // Les modèles/contrôleurs sont chargés comme dans index.php.
@@ -50,7 +51,8 @@ verifier(Auth::utilisateur() !== null, 'Auth::utilisateur() lit la session');
 verifier(strlen(Auth::jeton()) === 64, 'Auth::jeton() génère 64 hex');
 
 echo '--- Classes métier ---' . PHP_EOL;
-foreach (['Auth','View','Database','Graphiques','RegistreModel','RechercheModel','MemoireModel','SuiviModel',
+foreach (['Auth','View','Database','Graphiques','ConclusionPenale','ConclusionCivile','ConclusionDessaisissement',
+          'RegistreModel','RechercheModel','MemoireModel','SuiviModel',
           'SuiviDossierModel','RepartitionModel','DistributionModel','ClientModel','StatsModel',
           'AdministrationModel','AuthController','DashboardController','RegistreController','MemoireController',
           'SuiviController','SuiviDossierController','RepartitionController','DistributionController',

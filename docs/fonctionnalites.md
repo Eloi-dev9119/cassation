@@ -58,6 +58,7 @@ Le même moteur sert les **6 registres de dossiers** et le **registre des mémoi
 - **Préremplissage des mémoires** : créer un mémoire depuis la fiche d'un dossier (n° de dossier PGCS prérempli).
 - **Lien Siège ↔ Civil** : créer le « suivi au Siège » depuis une fiche civile et naviguer entre dossier civil et dossier du Siège.
 - **Conclusion civile préremplie** : génération d'un modèle de conclusion publique (en-tête COUR SUPRÊME, référence, parties, date en français, chambre) prêt à imprimer depuis la fiche civil.
+- **Conclusion déssaisissement préremplie** : modèle « Requête aux fins de renvoi d'une juridiction à une autre » (article 96 de la loi organique n° 2004-036) propre au registre des déssaisissements.
 
 ## 4. Recherche, filtres et exports (toutes les listes)
 
